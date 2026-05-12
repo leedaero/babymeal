@@ -1,0 +1,7 @@
+config.json
+logs/
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+.pytest_cache/

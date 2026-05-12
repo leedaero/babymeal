@@ -1,0 +1,16 @@
+{
+  "db": {
+    "host": "192.168.0.34",
+    "port": 3306,
+    "user": "root",
+    "password": "YOUR_DB_PASSWORD",
+    "database": "babymeal"
+  },
+  "secret_key": "CHANGE_ME_RANDOM_STRING",
+  "port": 8990,
+  "debug": false,
+  "discord_webhook": "",
+  "web": {
+    "trusted_proxies": []
+  }
+}
