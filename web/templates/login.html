@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>로그인 - 치밀한 이유식</title></head>
+<body>
+<h1>치밀한 이유식</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <p class="{{ category }}">{{ message }}</p>
+  {% endfor %}
+{% endwith %}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>아이디 <input type="text" name="username"></label>
+  <label>비밀번호 <input type="password" name="password"></label>
+  <button type="submit">로그인</button>
+</form>
+</body>
+</html>
