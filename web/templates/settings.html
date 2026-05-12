@@ -3,7 +3,7 @@
 {% block title %}설정 — 치밀한 이유식{% endblock %}
 
 {% block content %}
-<div x-data="settingsPage()">
+<div x-data="settingsPage()" x-init="init()">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
     <h2 style="font-size:1rem;font-weight:700;">계정 관리</h2>
@@ -46,6 +46,39 @@
         </template>
       </tbody>
     </table>
+  </div>
+
+  <!-- 알림 설정 -->
+  <div style="margin-top:2rem;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">디스코드 알림 설정</h2>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div>
+          <p style="font-size:.875rem;font-weight:600;">재고 부족 알림</p>
+          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">큐브 3개 이하 재료를 매일 지정 시간에 디스코드로 전송</p>
+        </div>
+        <button class="btn btn-sm" :class="notify.enabled ? 'btn-green' : 'btn-muted'"
+                @click="notify.enabled = !notify.enabled"
+                x-text="notify.enabled ? '🔔 활성' : '🔕 비활성'"></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);white-space:nowrap;">발송 시간</label>
+        <input class="form-input" type="number" min="0" max="23" style="width:5rem;"
+               x-model.number="notify.notify_hour" placeholder="시">
+        <span style="color:var(--text-muted);">:</span>
+        <input class="form-input" type="number" min="0" max="59" style="width:5rem;"
+               x-model.number="notify.notify_minute" placeholder="분">
+        <span style="font-size:.75rem;color:var(--text-muted);">매일</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <button class="btn btn-blue btn-sm" @click="saveNotify()" :disabled="notifySaving">
+          <span x-text="notifySaving ? '저장 중...' : '💾 저장'"></span>
+        </button>
+        <button class="btn btn-muted btn-sm" @click="testNotify()">📨 테스트 발송</button>
+        <span x-show="notifyMsg" x-text="notifyMsg"
+              style="font-size:.8rem;" :style="notifyOk ? 'color:var(--accent-green)' : 'color:var(--danger)'"></span>
+      </div>
+    </div>
   </div>
 
   <!-- 계정 추가 모달 -->

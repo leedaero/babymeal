@@ -213,12 +213,39 @@ function settingsPage() {
         errorMsg: '',
         form: { username: '', password: '', is_admin: false },
 
+        notify: { enabled: false, notify_hour: 8, notify_minute: 0 },
+        notifySaving: false,
+        notifyMsg: '',
+        notifyOk: true,
+
         async init() {
-            await this.load();
+            await Promise.all([this.load(), this.loadNotify()]);
         },
 
         async load() {
             this.users = await api('/api/users') || [];
+        },
+
+        async loadNotify() {
+            const r = await api('/api/notification-settings');
+            if (r) this.notify = r;
+        },
+
+        async saveNotify() {
+            this.notifySaving = true; this.notifyMsg = '';
+            const r = await api('/api/notification-settings', { method: 'PUT', body: this.notify });
+            this.notifySaving = false;
+            if (r?.ok) { this.notifyOk = true; this.notifyMsg = '저장됐어요 ✅'; }
+            else        { this.notifyOk = false; this.notifyMsg = r?.error || '저장 실패'; }
+            setTimeout(() => this.notifyMsg = '', 3000);
+        },
+
+        async testNotify() {
+            this.notifyMsg = '';
+            const r = await api('/api/notification-settings/test', { method: 'POST' });
+            if (r?.ok) { this.notifyOk = true;  this.notifyMsg = '발송 완료 📨'; }
+            else        { this.notifyOk = false; this.notifyMsg = r?.error || '발송 실패'; }
+            setTimeout(() => this.notifyMsg = '', 4000);
         },
 
         closeModal() {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, json, argparse, secrets, logging
+import sys, os, json, argparse, secrets, logging, urllib.request, urllib.error
 from datetime import datetime, timedelta
 from pathlib import Path
 from functools import wraps
@@ -511,6 +511,148 @@ def create_app(config=None):
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
                 (delta, r['ingredient_id'])
             )
+
+    # ─── 알림 설정 API ────────────────────────────────────────
+
+    def _ensure_notification_table(conn):
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS notification_settings (
+                id TINYINT PRIMARY KEY DEFAULT 1,
+                enabled TINYINT(1) NOT NULL DEFAULT 0,
+                notify_hour TINYINT NOT NULL DEFAULT 8,
+                notify_minute TINYINT NOT NULL DEFAULT 0
+            )
+        """)
+        cur.execute("INSERT IGNORE INTO notification_settings (id) VALUES (1)")
+        conn.commit()
+
+    def _get_notification_settings_row():
+        conn = _db.get_connection()
+        try:
+            _ensure_notification_table(conn)
+            cur = conn.cursor()
+            cur.execute("SELECT enabled, notify_hour, notify_minute FROM notification_settings WHERE id=1")
+            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0}
+        finally:
+            conn.close()
+
+    @app.get('/api/notification-settings')
+    @admin_required
+    def api_notification_get():
+        row = _get_notification_settings_row()
+        return jsonify({
+            'enabled':       bool(row['enabled']),
+            'notify_hour':   row['notify_hour'],
+            'notify_minute': row['notify_minute'],
+        })
+
+    @app.post('/api/notification-settings/test')
+    @admin_required
+    def api_notification_test():
+        cfg = _db.load_config()
+        if not cfg.get('discord_webhook', '').strip():
+            return jsonify({'error': 'discord_webhook이 config.json에 설정되지 않았습니다'}), 400
+        _send_low_stock_notification()
+        return jsonify({'ok': True})
+
+    @app.put('/api/notification-settings')
+    @admin_required
+    def api_notification_put():
+        d = request.get_json() or {}
+        try:
+            enabled = bool(d.get('enabled', False))
+            hour    = int(d.get('notify_hour', 8))
+            minute  = int(d.get('notify_minute', 0))
+            if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({'error': '유효하지 않은 시간입니다'}), 400
+
+        conn = _db.get_connection()
+        try:
+            _ensure_notification_table(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s WHERE id=1",
+                (int(enabled), hour, minute),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        _reschedule_notification(enabled, hour, minute)
+        return jsonify({'ok': True, 'enabled': enabled, 'notify_hour': hour, 'notify_minute': minute})
+
+    # ─── APScheduler ─────────────────────────────────────────
+
+    def _send_low_stock_notification():
+        cfg = _db.load_config()
+        webhook = cfg.get('discord_webhook', '').strip()
+        if not webhook:
+            return
+        conn = _db.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= 3 ORDER BY current_cubes"
+            )
+            items = cur.fetchall()
+        finally:
+            conn.close()
+
+        if not items:
+            return
+
+        lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
+        for item in items:
+            bar = "▓" * item['current_cubes'] + "░" * (3 - item['current_cubes'])
+            lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
+        lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
+        message = "\n".join(lines)
+
+        try:
+            payload = json.dumps({"content": message}).encode("utf-8")
+            req = urllib.request.Request(
+                webhook, data=payload,
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            urllib.request.urlopen(req, timeout=10)
+        except Exception as e:
+            logging.warning("Discord 알림 실패: %s", e)
+
+    if not app.config.get('TESTING'):  # noqa: SIM102
+        try:
+            from apscheduler.schedulers.background import BackgroundScheduler
+            from apscheduler.triggers.cron import CronTrigger
+
+            _scheduler = BackgroundScheduler(daemon=True)
+            _scheduler.start()
+
+            def _reschedule_notification(enabled, hour, minute):
+                _scheduler.remove_all_jobs()
+                if enabled:
+                    _scheduler.add_job(
+                        _send_low_stock_notification,
+                        CronTrigger(hour=hour, minute=minute),
+                        id='low_stock_notify',
+                        replace_existing=True,
+                    )
+
+            # 앱 시작 시 DB에서 설정 읽어 스케줄 복원
+            try:
+                row = _get_notification_settings_row()
+                _reschedule_notification(row['enabled'], row['notify_hour'], row['notify_minute'])
+            except Exception as e:
+                logging.warning("알림 스케줄 복원 실패: %s", e)
+
+        except ImportError:
+            logging.warning("APScheduler 미설치 — 알림 스케줄링 비활성화")
+            def _reschedule_notification(enabled, hour, minute):
+                pass
+    else:
+        def _reschedule_notification(enabled, hour, minute):
+            pass
 
     return app
 
