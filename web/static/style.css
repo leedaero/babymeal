@@ -68,45 +68,73 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 
 /* ─── 레이아웃 ─── */
 
-.topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  height: var(--topbar-height);
-  display: flex; align-items: stretch;
-  padding: 0 1rem; gap: 0;
+.layout {
+  display: flex;
+  min-height: 100vh;
 }
 
-.topbar-brand {
+.sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  padding: 1.25rem 0;
+}
+
+.sidebar-brand {
   display: flex; align-items: center; gap: .5rem;
   font-weight: 700; font-size: 1rem;
   color: var(--text-primary); text-decoration: none;
-  padding-right: 1.5rem; flex-shrink: 0;
+  padding: 0 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .5rem;
 }
 
-.topbar-right {
-  margin-left: auto;
-  display: flex; align-items: center; gap: .5rem;
+.tab-nav {
+  display: flex; flex-direction: column;
+  flex: 1;
+  gap: .15rem;
+  padding: 0 .75rem;
 }
-
-.topbar-user { font-size: .8rem; color: var(--text-muted); }
-
-.tab-nav { display: flex; align-items: stretch; }
 
 .tab-btn {
-  display: flex; align-items: center; gap: .35rem;
-  padding: 0 1rem;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .6rem .75rem;
   font-size: .875rem; font-weight: 500;
   color: var(--text-secondary);
   border: none; background: none; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+  transition: color .15s, background .15s;
   text-decoration: none;
 }
-.tab-btn:hover { color: var(--text-primary); }
-.tab-btn.active { color: var(--accent-green); border-bottom-color: var(--accent-green); }
+.tab-btn:hover { background: var(--muted-bg); color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent-green);
+  background: var(--accent-green-bg);
+  border-left-color: var(--accent-green);
+}
 
-.main { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem; }
+.sidebar-bottom {
+  padding: .75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .4rem;
+}
+
+.sidebar-user { font-size: .75rem; color: var(--text-muted); }
+
+.content-wrap {
+  margin-left: 180px;
+  flex: 1;
+  min-width: 0;
+}
+
+.main { max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem; }
 
 /* ─── 큐브 그리드 ─── */
 

@@ -10,24 +10,28 @@
   <script>window._csrfToken = {{ csrf_token()|tojson }};</script>
 </head>
 <body>
+<div class="layout">
 
-<header class="topbar">
-  <a href="/" class="topbar-brand">
-    <span>🍼</span><span>치밀한 이유식</span>
-  </a>
-  <nav class="tab-nav">
-    <a href="/"         class="tab-btn {% if active_tab == 'inventory' %}active{% endif %}">🧊 재고현황</a>
-    <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">📅 식단표</a>
-  </nav>
-  <div class="topbar-right">
-    <span class="topbar-user">{{ username }}</span>
-    <a href="/logout" class="btn btn-sm btn-muted">로그아웃</a>
+  <aside class="sidebar">
+    <a href="/" class="sidebar-brand">
+      <span>🍼</span><span>치밀한 이유식</span>
+    </a>
+    <nav class="tab-nav">
+      <a href="/"         class="tab-btn {% if active_tab == 'inventory' %}active{% endif %}">🧊 재고현황</a>
+      <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">📅 식단표</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <span class="sidebar-user">{{ username }}</span>
+      <a href="/logout" class="btn btn-sm btn-muted">로그아웃</a>
+    </div>
+  </aside>
+
+  <div class="content-wrap">
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
   </div>
-</header>
 
-<main class="main">
-  {% block content %}{% endblock %}
-</main>
-
+</div>
 </body>
 </html>
