@@ -204,3 +204,53 @@ function mealModal(defaultDate, ingredients) {
         },
     };
 }
+
+// ─── 설정 (관리자) ───
+function settingsPage() {
+    return {
+        users: [],
+        showAddModal: false,
+        errorMsg: '',
+        form: { username: '', password: '', is_admin: false },
+
+        async init() {
+            await this.load();
+        },
+
+        async load() {
+            this.users = await api('/api/users') || [];
+        },
+
+        closeModal() {
+            this.showAddModal = false;
+            this.form = { username: '', password: '', is_admin: false };
+            this.errorMsg = '';
+        },
+
+        async addUser() {
+            this.errorMsg = '';
+            if (!this.form.username || !this.form.password) {
+                this.errorMsg = '아이디와 비밀번호를 입력하세요';
+                return;
+            }
+            const res = await api('/api/users', { method: 'POST', body: this.form });
+            if (res?.error) { this.errorMsg = res.error; return; }
+            this.closeModal();
+            await this.load();
+        },
+
+        async toggleActive(u) {
+            const res = await api(`/api/users/${u.id}/toggle-active`, { method: 'POST' });
+            if (res && !res.error) {
+                const idx = this.users.findIndex(x => x.id === u.id);
+                if (idx !== -1) this.users[idx] = res;
+            }
+        },
+
+        async deleteUser(u) {
+            if (!confirm(`'${u.username}' 계정을 삭제할까요?`)) return;
+            const res = await api(`/api/users/${u.id}`, { method: 'DELETE' });
+            if (res?.ok) await this.load();
+        },
+    };
+}

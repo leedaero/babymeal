@@ -128,6 +128,18 @@ def create_app(config=None):
             return f(*args, **kwargs)
         return wrapper
 
+    def admin_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                return redirect(url_for('login_page'))
+            if not session.get('is_admin'):
+                if request.path.startswith('/api/'):
+                    return jsonify({'error': '관리자 권한 필요'}), 403
+                return redirect(url_for('inventory_page'))
+            return f(*args, **kwargs)
+        return wrapper
+
     # ─── 페이지 라우트 ────────────────────────────────────
 
     @app.route('/login', methods=['GET', 'POST'])
@@ -176,16 +188,84 @@ def create_app(config=None):
     def inventory_page():
         _run_auto_deduction(_mod.get_db())
         return render_template('inventory.html',
-                               username=session.get('username'))
+                               username=session.get('username'),
+                               is_admin=session.get('is_admin', False))
 
     @app.route('/schedule')
     @login_required
     def schedule_page():
         _run_auto_deduction(_mod.get_db())
         return render_template('schedule.html',
-                               username=session.get('username'))
+                               username=session.get('username'),
+                               is_admin=session.get('is_admin', False))
+
+    @app.route('/settings')
+    @admin_required
+    def settings_page():
+        return render_template('settings.html',
+                               username=session.get('username'),
+                               is_admin=session.get('is_admin', False))
 
     # ─── 자동 차감 ────────────────────────────────────────
+
+    # ─── 유저 API (관리자 전용) ──────────────────────────────
+
+    @app.get('/api/users')
+    @admin_required
+    def api_users_list():
+        cur = _mod.get_db().cursor()
+        cur.execute('SELECT id, username, is_admin, is_active FROM users ORDER BY id')
+        return jsonify([dict(r) for r in cur.fetchall()])
+
+    @app.post('/api/users')
+    @admin_required
+    def api_users_add():
+        d = request.get_json()
+        username = d.get('username', '').strip()
+        password = d.get('password', '')
+        is_admin = int(bool(d.get('is_admin', False)))
+        if not username or not password:
+            return jsonify({'error': '아이디와 비밀번호를 입력하세요'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('SELECT id FROM users WHERE username=%s', (username,))
+        if cur.fetchone():
+            return jsonify({'error': '이미 존재하는 아이디입니다'}), 409
+        phash = generate_password_hash(password)
+        cur.execute(
+            'INSERT INTO users (username, password_hash, is_admin) VALUES (%s, %s, %s)',
+            (username, phash, is_admin)
+        )
+        conn.commit()
+        cur.execute('SELECT id, username, is_admin, is_active FROM users WHERE id=%s', (cur.lastrowid,))
+        return jsonify(dict(cur.fetchone())), 201
+
+    @app.delete('/api/users/<int:user_id>')
+    @admin_required
+    def api_users_delete(user_id):
+        if user_id == session.get('user_id'):
+            return jsonify({'error': '본인 계정은 삭제할 수 없습니다'}), 400
+        conn = _mod.get_db()
+        conn.execute('DELETE FROM users WHERE id=%s', (user_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+
+    @app.post('/api/users/<int:user_id>/toggle-active')
+    @admin_required
+    def api_users_toggle(user_id):
+        if user_id == session.get('user_id'):
+            return jsonify({'error': '본인 계정은 변경할 수 없습니다'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('SELECT is_active FROM users WHERE id=%s', (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'error': 'not found'}), 404
+        new_active = 0 if row['is_active'] else 1
+        conn.execute('UPDATE users SET is_active=%s WHERE id=%s', (new_active, user_id))
+        conn.commit()
+        cur.execute('SELECT id, username, is_admin, is_active FROM users WHERE id=%s', (user_id,))
+        return jsonify(dict(cur.fetchone()))
 
     def _run_auto_deduction(conn):
         if app.config.get('TESTING'):

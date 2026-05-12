@@ -1,0 +1,81 @@
+{% extends "_base.html" %}
+{% set active_tab = 'settings' %}
+{% block title %}설정 — 치밀한 이유식{% endblock %}
+
+{% block content %}
+<div x-data="settingsPage()">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+    <h2 style="font-size:1rem;font-weight:700;">계정 관리</h2>
+    <button class="btn btn-green btn-sm" @click="showAddModal=true">+ 계정 추가</button>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);background:var(--muted-bg);">
+          <th style="padding:.6rem 1rem;text-align:left;font-size:.75rem;color:var(--text-muted);font-weight:600;">아이디</th>
+          <th style="padding:.6rem 1rem;text-align:left;font-size:.75rem;color:var(--text-muted);font-weight:600;">권한</th>
+          <th style="padding:.6rem 1rem;text-align:left;font-size:.75rem;color:var(--text-muted);font-weight:600;">상태</th>
+          <th style="padding:.6rem 1rem;text-align:right;font-size:.75rem;color:var(--text-muted);font-weight:600;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="u in users" :key="u.id">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:.75rem 1rem;font-size:.875rem;font-weight:500;" x-text="u.username"></td>
+            <td style="padding:.75rem 1rem;">
+              <span class="badge" :class="u.is_admin ? 'badge-blue' : 'badge-muted'"
+                    x-text="u.is_admin ? '관리자' : '일반'"></span>
+            </td>
+            <td style="padding:.75rem 1rem;">
+              <span class="badge" :class="u.is_active ? 'badge-success' : 'badge-danger'"
+                    x-text="u.is_active ? '활성' : '비활성'"></span>
+            </td>
+            <td style="padding:.75rem 1rem;text-align:right;">
+              <div style="display:flex;gap:.4rem;justify-content:flex-end;">
+                <button class="btn btn-sm btn-muted" @click="toggleActive(u)"
+                        x-text="u.is_active ? '비활성화' : '활성화'"></button>
+                <button class="btn btn-sm btn-danger" @click="deleteUser(u)">삭제</button>
+              </div>
+            </td>
+          </tr>
+        </template>
+        <template x-if="users.length === 0">
+          <tr><td colspan="4" style="padding:2rem;text-align:center;color:var(--text-muted);font-size:.875rem;">계정이 없습니다</td></tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 계정 추가 모달 -->
+  <template x-if="showAddModal">
+    <div class="modal-overlay" @click.self="showAddModal=false">
+      <div class="modal-box">
+        <p class="modal-title">계정 추가</p>
+        <div class="form-group">
+          <label class="form-label">아이디</label>
+          <input class="form-input" x-model="form.username" placeholder="아이디 입력" autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input class="form-input" type="password" x-model="form.password" placeholder="비밀번호 입력">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:.5rem;">
+          <input type="checkbox" id="is_admin" x-model="form.is_admin"
+                 style="width:16px;height:16px;cursor:pointer;">
+          <label for="is_admin" class="form-label" style="margin:0;cursor:pointer;">관리자 권한 부여</label>
+        </div>
+        <template x-if="errorMsg">
+          <p style="font-size:.8rem;color:var(--danger);margin-bottom:.75rem;" x-text="errorMsg"></p>
+        </template>
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="closeModal()">취소</button>
+          <button class="btn btn-green" @click="addUser()">추가하기</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}

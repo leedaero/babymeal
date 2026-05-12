@@ -19,6 +19,9 @@
     <nav class="tab-nav">
       <a href="/"         class="tab-btn {% if active_tab == 'inventory' %}active{% endif %}">🧊 재고현황</a>
       <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">📅 식단표</a>
+      {% if is_admin %}
+      <a href="/settings" class="tab-btn {% if active_tab == 'settings'  %}active{% endif %}">⚙️ 설정</a>
+      {% endif %}
     </nav>
     <div class="sidebar-bottom">
       <span class="sidebar-user">{{ username }}</span>
