@@ -266,7 +266,8 @@ def create_app(config=None):
         if user_id == session.get('user_id'):
             return jsonify({'error': '본인 계정은 삭제할 수 없습니다'}), 400
         conn = _mod.get_db()
-        conn.execute('DELETE FROM users WHERE id=%s', (user_id,))
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM users WHERE id=%s', (user_id,))
         conn.commit()
         return jsonify({'ok': True})
 
@@ -282,7 +283,7 @@ def create_app(config=None):
         if not row:
             return jsonify({'error': 'not found'}), 404
         new_active = 0 if row['is_active'] else 1
-        conn.execute('UPDATE users SET is_active=%s WHERE id=%s', (new_active, user_id))
+        cur.execute('UPDATE users SET is_active=%s WHERE id=%s', (new_active, user_id))
         conn.commit()
         cur.execute('SELECT id, username, is_admin, is_active FROM users WHERE id=%s', (user_id,))
         return jsonify(dict(cur.fetchone()))
@@ -323,9 +324,9 @@ def create_app(config=None):
             list(meals_map.values()), list(ing_map.values())
         )
         for meal_id, status in updates.items():
-            conn.execute('UPDATE meals SET status=%s WHERE id=%s', (status, meal_id))
+            cur.execute('UPDATE meals SET status=%s WHERE id=%s', (status, meal_id))
         for ing_id, delta in deltas.items():
-            conn.execute(
+            cur.execute(
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
                 (delta, ing_id)
             )
@@ -392,7 +393,8 @@ def create_app(config=None):
     @login_required
     def api_ingredients_delete(ing_id):
         conn = _mod.get_db()
-        conn.execute('DELETE FROM ingredients WHERE id=%s', (ing_id,))
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM ingredients WHERE id=%s', (ing_id,))
         conn.commit()
         return jsonify({'ok': True})
 
@@ -405,12 +407,12 @@ def create_app(config=None):
         except (KeyError, TypeError, ValueError):
             return jsonify({'error': 'delta는 정수여야 합니다'}), 400
         conn  = _mod.get_db()
-        conn.execute(
+        cur   = conn.cursor()
+        cur.execute(
             'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
             (delta, ing_id)
         )
         conn.commit()
-        cur = conn.cursor()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         return jsonify(dict(cur.fetchone()))
 
@@ -465,7 +467,8 @@ def create_app(config=None):
     @login_required
     def api_meals_delete(meal_id):
         conn = _mod.get_db()
-        conn.execute('DELETE FROM meals WHERE id=%s', (meal_id,))
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM meals WHERE id=%s', (meal_id,))
         conn.commit()
         return jsonify({'ok': True})
 
@@ -489,7 +492,7 @@ def create_app(config=None):
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
             _apply_stock_delta(conn, meal_id, direction='deduct')
 
-        conn.execute('UPDATE meals SET status=%s WHERE id=%s', (new_status, meal_id))
+        cur.execute('UPDATE meals SET status=%s WHERE id=%s', (new_status, meal_id))
         conn.commit()
         return jsonify(_meal_with_ingredients(conn, meal_id))
 
@@ -504,7 +507,7 @@ def create_app(config=None):
         for r in cur.fetchall():
             cubes = round(r['grams'] / r['weight_per_cube'])
             delta = -cubes if direction == 'deduct' else cubes
-            conn.execute(
+            cur.execute(
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
                 (delta, r['ingredient_id'])
             )
