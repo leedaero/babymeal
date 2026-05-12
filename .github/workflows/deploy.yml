@@ -1,0 +1,53 @@
+name: Deploy to NAS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sync to NAS
+        run: |
+          rsync -a --exclude='.git' --exclude='config.json' --exclude='logs/' \
+            $GITHUB_WORKSPACE/ /volume1/DR_DATA1/babyMeal/
+          nsenter --target 1 --mount --uts --ipc --net --pid -- \
+            chown -R daero52:users /volume1/DR_DATA1/babyMeal/
+          nsenter --target 1 --mount --uts --ipc --net --pid -- \
+            chmod -R 755 /volume1/DR_DATA1/babyMeal/
+
+      - name: Install dependencies
+        run: pip3 install -r /volume1/DR_DATA1/babyMeal/requirements.txt --quiet
+
+      - name: Restart service
+        run: |
+          nsenter --target 1 --mount --uts --ipc --net --pid -- \
+            systemctl restart babymeal
+
+      - name: Discord notify
+        if: always()
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          PAYLOAD=$(python3 << 'PYEOF'
+          import json, datetime, os
+          status = os.environ.get('JOB_STATUS', 'failure')
+          msg    = os.environ.get('COMMIT_MSG', '').split('\n')[0]
+          if status == 'success':
+              color, title, desc = 3066993, '🍼 이유식 앱 배포 완료', f'**{msg}**'
+          else:
+              color, title = 15158332, '🍼 이유식 앱 배포 실패'
+              desc = f'[로그 확인]({os.environ.get("RUN_URL","")})'
+          now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+          print(json.dumps({'embeds':[{'title':title,'description':desc,'color':color,'footer':{'text':now}}]}))
+          PYEOF
+          )
+          WEBHOOK=$(python3 -c "import json; print(json.load(open('/volume1/DR_DATA1/babyMeal/config.json')).get('discord_webhook',''))" 2>/dev/null || echo "")
+          [ -n "$WEBHOOK" ] && curl -s -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK" || true
