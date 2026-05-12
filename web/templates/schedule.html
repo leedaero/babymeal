@@ -3,7 +3,9 @@
 {% block title %}식단표 — 치밀한 이유식{% endblock %}
 
 {% block content %}
-<div x-data="schedulePage()" x-init="init()">
+<div x-data="schedulePage()" x-init="init()"
+     @meal-saved="onMealSaved()"
+     @close-modal="showAddModal=false">
 
   <template x-if="sortedDates.length === 0">
     <div class="empty-state">
@@ -49,8 +51,7 @@
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">
       <div class="modal-box"
-           x-data="mealModal(addDefaultDate, ingredients)"
-           @meal-saved="$parent.onMealSaved()">
+           x-data="mealModal(addDefaultDate, ingredients)">
         <p class="modal-title">식단 추가</p>
         <div class="form-row">
           <div class="form-group">
@@ -85,7 +86,7 @@
           </template>
         </div>
         <div class="form-actions">
-          <button class="btn btn-muted" @click="$parent.showAddModal=false">취소</button>
+          <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">추가하기</button>
         </div>
       </div>

@@ -3,7 +3,9 @@
 {% block title %}재고현황 — 치밀한 이유식{% endblock %}
 
 {% block content %}
-<div x-data="inventoryPage()" x-init="init()">
+<div x-data="inventoryPage()" x-init="init()"
+     @saved="onSaved()"
+     @close-modal="showAddModal=false">
 
   <template x-if="lowStockItems.length > 0">
     <div class="stock-warning">
@@ -54,8 +56,7 @@
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal = false">
       <div class="modal-box"
-           x-data="ingredientModal(editTarget)"
-           @saved="$parent.onSaved()">
+           x-data="ingredientModal(editTarget)">
         <p class="modal-title" x-text="editId ? '재료 수정' : '새 재료 추가'"></p>
         <div class="form-group">
           <label class="form-label">식재료명</label>
@@ -95,7 +96,7 @@
           <input class="form-input" type="number" x-model.number="form.total_cubes" min="1" required>
         </div>
         <div class="form-actions">
-          <button class="btn btn-muted" @click="$parent.showAddModal=false">취소</button>
+          <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-green" @click="submit()" x-text="editId?'수정 완료':'추가하기'"></button>
         </div>
       </div>
