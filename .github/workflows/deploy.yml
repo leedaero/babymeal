@@ -21,6 +21,31 @@ jobs:
           nsenter --target 1 --mount --uts --ipc --net --pid -- \
             chmod -R 755 /volume1/DR_DATA1/babyMeal/
 
+      - name: Write config.json
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          python3 -c "
+          import json, os
+          cfg = {
+            'db': {
+              'host': '192.168.0.34',
+              'port': 3306,
+              'user': 'root',
+              'password': os.environ['DB_PASSWORD'],
+              'database': 'babymeal'
+            },
+            'secret_key': os.environ['SECRET_KEY'],
+            'port': 8990,
+            'debug': False,
+            'discord_webhook': os.environ.get('DISCORD_WEBHOOK', '')
+          }
+          with open('/volume1/DR_DATA1/babyMeal/config.json', 'w') as f:
+              json.dump(cfg, f, indent=2)
+          "
+
       - name: Install dependencies
         run: pip3 install -r /volume1/DR_DATA1/babyMeal/requirements.txt --quiet
 
