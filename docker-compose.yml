@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  github-runner:
+    image: myoung34/github-runner:latest
+    container_name: babymeal-runner
+    restart: always
+    privileged: true
+    pid: host
+    environment:
+      REPO_URL: https://github.com/leedaero/babymeal
+      ACCESS_TOKEN: ${ACCESS_TOKEN}
+      RUNNER_NAME: babymeal-runner
+      RUNNER_WORKDIR: /volume1/DR_DATA1/babyMeal
+      EPHEMERAL: "false"
+      DISABLE_AUTO_UPDATE: "true"
+    volumes:
+      - /volume1/DR_DATA1/babyMeal:/volume1/DR_DATA1/babyMeal
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/services/homes/daero52/.ssh:/root/.ssh:ro
