@@ -26,13 +26,22 @@ def get_db():
     raise RuntimeError('get_db called before create_app')
 
 
+_VALID_STATUSES  = {'upcoming', 'confirmed', 'skipped', 'auto-consumed'}
+_VALID_MEAL_TIMES = {'morning', 'lunch', 'snack', 'dinner'}
+
+
 def create_app(config=None):
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'dev'
     app.config['TESTING'] = False
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
     if config:
         app.config.update(config)
+
+    if not app.config.get('TESTING') and app.config['SECRET_KEY'] == 'dev':
+        import warnings
+        warnings.warn('SECRET_KEY가 기본값입니다. config.json에서 변경하세요.', stacklevel=2)
 
     # ─── DB ───────────────────────────────────────────────
     # Replace module-level get_db so that patch('web.app.get_db') works in tests
@@ -49,6 +58,15 @@ def create_app(config=None):
         return g.db
 
     _mod.get_db = _get_db
+
+    # ─── 보안 헤더 ───────────────────────────────────────────
+
+    @app.after_request
+    def _security_headers(resp):
+        resp.headers['X-Content-Type-Options'] = 'nosniff'
+        resp.headers['X-Frame-Options']        = 'SAMEORIGIN'
+        resp.headers['Referrer-Policy']        = 'same-origin'
+        return resp
 
     @app.teardown_appcontext
     def close_db(exc):
@@ -220,12 +238,14 @@ def create_app(config=None):
     @app.post('/api/users')
     @admin_required
     def api_users_add():
-        d = request.get_json()
+        d = request.get_json() or {}
         username = d.get('username', '').strip()
         password = d.get('password', '')
         is_admin = int(bool(d.get('is_admin', False)))
         if not username or not password:
             return jsonify({'error': '아이디와 비밀번호를 입력하세요'}), 400
+        if len(password) < 6:
+            return jsonify({'error': '비밀번호는 6자 이상이어야 합니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute('SELECT id FROM users WHERE username=%s', (username,))
@@ -329,7 +349,17 @@ def create_app(config=None):
     @app.post('/api/ingredients')
     @login_required
     def api_ingredients_add():
-        d = request.get_json()
+        d = request.get_json() or {}
+        required = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes'}
+        if not required.issubset(d):
+            return jsonify({'error': '필수 항목 누락'}), 400
+        try:
+            d['weight_per_cube'] = int(d['weight_per_cube'])
+            d['total_cubes']     = int(d['total_cubes'])
+            if d['weight_per_cube'] <= 0 or d['total_cubes'] <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return jsonify({'error': '중량/개수는 양의 정수여야 합니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute("""
@@ -369,7 +399,11 @@ def create_app(config=None):
     @app.post('/api/ingredients/<int:ing_id>/adjust')
     @login_required
     def api_ingredients_adjust(ing_id):
-        delta = request.get_json()['delta']
+        body = request.get_json() or {}
+        try:
+            delta = int(body['delta'])
+        except (KeyError, TypeError, ValueError):
+            return jsonify({'error': 'delta는 정수여야 합니다'}), 400
         conn  = _mod.get_db()
         conn.execute(
             'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
@@ -407,7 +441,11 @@ def create_app(config=None):
     @app.post('/api/meals')
     @login_required
     def api_meals_add():
-        d    = request.get_json()
+        d = request.get_json() or {}
+        if not d.get('date') or not d.get('meal_time'):
+            return jsonify({'error': '날짜와 끼니를 입력하세요'}), 400
+        if d['meal_time'] not in _VALID_MEAL_TIMES:
+            return jsonify({'error': '유효하지 않은 끼니입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute(
@@ -434,7 +472,10 @@ def create_app(config=None):
     @app.post('/api/meals/<int:meal_id>/status')
     @login_required
     def api_meals_status(meal_id):
-        new_status = request.get_json()['status']
+        body = request.get_json() or {}
+        new_status = body.get('status')
+        if new_status not in _VALID_STATUSES:
+            return jsonify({'error': '유효하지 않은 상태입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute('SELECT status FROM meals WHERE id=%s', (meal_id,))
