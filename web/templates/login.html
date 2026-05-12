@@ -1,18 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><title>로그인 - 치밀한 이유식</title></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 — 치밀한 이유식</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1">
+</head>
 <body>
-<h1>치밀한 이유식</h1>
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p class="{{ category }}">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
-<form method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label>아이디 <input type="text" name="username"></label>
-  <label>비밀번호 <input type="password" name="password"></label>
-  <button type="submit">로그인</button>
-</form>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="icon">🍼</div>
+      <h1>치밀한 이유식</h1>
+      <p>큐브 재고 관리</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-error">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login_page') }}">
+      <div class="form-group">
+        <label class="form-label">아이디</label>
+        <input type="text" name="username" class="form-input"
+               placeholder="admin" autofocus required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" name="password" class="form-input"
+               placeholder="비밀번호를 입력하세요" required>
+      </div>
+      <button type="submit" class="btn btn-primary">로그인</button>
+    </form>
+  </div>
+</div>
 </body>
 </html>

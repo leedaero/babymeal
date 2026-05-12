@@ -1,0 +1,106 @@
+{% extends "_base.html" %}
+{% set active_tab = 'inventory' %}
+{% block title %}재고현황 — 치밀한 이유식{% endblock %}
+
+{% block content %}
+<div x-data="inventoryPage()" x-init="init()">
+
+  <template x-if="lowStockItems.length > 0">
+    <div class="stock-warning">
+      <span class="stock-warning-icon">🚨</span>
+      <div>
+        <p class="stock-warning-title">재고 부족 알림</p>
+        <p class="stock-warning-body">
+          <template x-for="i in lowStockItems" :key="i.id">
+            <span x-text="`${i.emoji} ${i.name} (${i.current_cubes}개 남음)  `"></span>
+          </template>
+        </p>
+      </div>
+    </div>
+  </template>
+
+  <div class="cube-grid">
+    <template x-for="ing in ingredients" :key="ing.id">
+      <div class="cube-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div class="cube-icon" :style="`background-color:${ing.color}22`" x-text="ing.emoji"></div>
+          <button class="btn btn-sm btn-muted" @click="openEdit(ing)" style="padding:.2rem .5rem;">✏️</button>
+        </div>
+        <div>
+          <p class="cube-name" x-text="ing.name"></p>
+          <p class="cube-unit" x-text="`${ing.weight_per_cube}g / 큐브`"></p>
+        </div>
+        <template x-if="expiryStatus(ing.created_at) === 'warning'">
+          <span class="badge badge-warning" x-text="`⚠️ ${expiryDays(ing.created_at)}일 경과`"></span>
+        </template>
+        <template x-if="expiryStatus(ing.created_at) === 'danger'">
+          <span class="badge badge-danger" x-text="`🚨 ${expiryDays(ing.created_at)}일 경과`"></span>
+        </template>
+        <div class="cube-count-row">
+          <button class="adj-btn" @click="adjust(ing.id, -1)">−</button>
+          <span class="cube-count" :class="ing.current_cubes <= 3 ? 'low' : ''"
+                x-text="ing.current_cubes + (ing.current_cubes <= 3 ? ' 🚨' : '')"></span>
+          <button class="adj-btn" @click="adjust(ing.id, +1)">+</button>
+        </div>
+      </div>
+    </template>
+
+    <button class="cube-add-btn" @click="openAdd()">
+      <span style="font-size:1.75rem;">+</span>
+      <span>재료 추가</span>
+    </button>
+  </div>
+
+  <template x-if="showAddModal">
+    <div class="modal-overlay" @click.self="showAddModal = false">
+      <div class="modal-box"
+           x-data="ingredientModal(editTarget)"
+           @saved="$parent.onSaved()">
+        <p class="modal-title" x-text="editId ? '재료 수정' : '새 재료 추가'"></p>
+        <div class="form-group">
+          <label class="form-label">식재료명</label>
+          <input class="form-input" x-model="form.name" placeholder="예: 소고기" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">이모지 선택</label>
+          <div class="emoji-grid">
+            <template x-for="e in presetEmojis" :key="e">
+              <button class="emoji-btn" :class="form.emoji===e?'selected':''"
+                      @click="form.emoji=e" type="button" x-text="e"></button>
+            </template>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">큐브 색상</label>
+          <div class="color-grid">
+            <template x-for="c in presetColors" :key="c">
+              <button class="color-btn" :class="form.color===c?'selected':''"
+                      :style="`background-color:${c}`"
+                      @click="form.color=c" type="button"></button>
+            </template>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">제작일</label>
+            <input class="form-input" type="date" x-model="form.created_at" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">1큐브 중량 (g)</label>
+            <input class="form-input" type="number" x-model.number="form.weight_per_cube" min="1" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">총 제작 개수</label>
+          <input class="form-input" type="number" x-model.number="form.total_cubes" min="1" required>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="$parent.showAddModal=false">취소</button>
+          <button class="btn btn-green" @click="submit()" x-text="editId?'수정 완료':'추가하기'"></button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}

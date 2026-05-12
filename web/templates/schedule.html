@@ -1,0 +1,96 @@
+{% extends "_base.html" %}
+{% set active_tab = 'schedule' %}
+{% block title %}식단표 — 치밀한 이유식{% endblock %}
+
+{% block content %}
+<div x-data="schedulePage()" x-init="init()">
+
+  <template x-if="sortedDates.length === 0">
+    <div class="empty-state">
+      <div class="empty-state-icon">🍱</div>
+      <p class="empty-state-text">아직 등록된 식단이 없어요</p>
+    </div>
+  </template>
+
+  <template x-for="date in sortedDates" :key="date">
+    <div class="date-group">
+      <div class="date-label">
+        <span class="date-label-text" :class="isPast(date)?'past':''" x-text="dateLabel(date)"></span>
+        <button class="btn btn-sm btn-blue" @click="openAddMeal(date)">+ 끼니 추가</button>
+      </div>
+
+      <template x-for="meal in groupedMeals[date]" :key="meal.id">
+        <div class="meal-row" :class="meal.status==='skipped'?'skipped':''">
+          <div class="meal-row-header">
+            <span class="meal-time-label" x-text="mealLabel(meal.meal_time)"></span>
+            <span class="badge" :class="statusBadge(meal.status).cls"
+                  x-text="statusBadge(meal.status).text"></span>
+          </div>
+          <div class="meal-ingredients">
+            <template x-for="mi in meal.ingredients" :key="mi.ingredient_id">
+              <span class="meal-ing-chip" x-text="`${mi.emoji} ${mi.name} ${mi.grams}g`"></span>
+            </template>
+          </div>
+          <div class="meal-actions">
+            <template x-if="meal.status==='upcoming'||meal.status==='skipped'">
+              <button class="btn btn-sm btn-green" @click="setStatus(meal,'confirmed')">✅ 먹었어요</button>
+            </template>
+            <template x-if="meal.status==='auto-consumed'||meal.status==='confirmed'">
+              <button class="btn btn-sm btn-muted" @click="setStatus(meal,'skipped')">↩ 안 먹었어요</button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  <button class="btn-add-date" @click="openAddMeal()">+ 날짜 식단 추가</button>
+
+  <template x-if="showAddModal">
+    <div class="modal-overlay" @click.self="showAddModal=false">
+      <div class="modal-box"
+           x-data="mealModal(addDefaultDate, ingredients)"
+           @meal-saved="$parent.onMealSaved()">
+        <p class="modal-title">식단 추가</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">날짜</label>
+            <input class="form-input" type="date" x-model="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">끼니</label>
+            <select class="form-input" x-model="mealTime">
+              <template x-for="mt in mealTimes" :key="mt.value">
+                <option :value="mt.value" x-text="mt.label"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">재료 용량 (g)</label>
+          <template x-if="ingredients.length===0">
+            <p style="font-size:.8rem;color:var(--text-muted);padding:.5rem 0;">
+              먼저 재고 탭에서 재료를 추가해주세요
+            </p>
+          </template>
+          <template x-for="ing in ingredients" :key="ing.id">
+            <div class="ing-row">
+              <span class="ing-row-emoji" x-text="ing.emoji"></span>
+              <span class="ing-row-name"  x-text="ing.name"></span>
+              <input class="ing-row-input" type="number" min="0" placeholder="0"
+                     :value="grams[ing.id]||''"
+                     @input="grams[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-unit">g</span>
+            </div>
+          </template>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="$parent.showAddModal=false">취소</button>
+          <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">추가하기</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}
