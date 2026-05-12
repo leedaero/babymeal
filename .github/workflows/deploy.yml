@@ -47,7 +47,7 @@ jobs:
           "
 
       - name: Install dependencies
-        run: pip3 install -r /volume1/DR_DATA1/babyMeal/requirements.txt --quiet
+        run: /bin/python3 -m pip install -r /volume1/DR_DATA1/babyMeal/requirements.txt --quiet
 
       - name: Restart service
         run: |

@@ -6,7 +6,7 @@ After=network.target mysqld.service
 Type=simple
 User=daero52
 WorkingDirectory=/volume1/DR_DATA1/babyMeal
-ExecStart=/usr/bin/python3 /volume1/DR_DATA1/babyMeal/web/app.py --port 8990
+ExecStart=/bin/python3 /volume1/DR_DATA1/babyMeal/web/app.py --port 8990
 Restart=always
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
