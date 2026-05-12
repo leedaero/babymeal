@@ -72,6 +72,96 @@ function inventoryPage() {
 const PRESET_EMOJIS = ['🥩','🐟','🥕','🥦','🌽','🍠','🥬','🫑','🧅','🍗','🥚','🧀','🍖','🫛','🥑'];
 const PRESET_COLORS = ['#C0392B','#E67E22','#F1C40F','#27AE60','#2980B9','#8E44AD','#1ABC9C','#E74C3C'];
 
+const EMOJI_DATA = [
+    // 육류
+    {e:'🥩',n:'고기 소고기 육류 스테이크 beef meat'},
+    {e:'🍖',n:'뼈 고기 갈비 돼지 bone meat'},
+    {e:'🍗',n:'닭 치킨 닭다리 chicken'},
+    {e:'🥓',n:'베이컨 돼지고기 삼겹살 bacon pork'},
+    {e:'🐖',n:'돼지 pork pig'},
+    {e:'🐄',n:'소 beef cow'},
+    {e:'🦆',n:'오리 duck'},
+    {e:'🦃',n:'칠면조 turkey'},
+    // 해산물
+    {e:'🐟',n:'생선 물고기 어류 fish'},
+    {e:'🐡',n:'복어 생선 fish'},
+    {e:'🐠',n:'열대어 생선 fish'},
+    {e:'🐬',n:'돌고래 dolphin'},
+    {e:'🦐',n:'새우 shrimp prawn'},
+    {e:'🦑',n:'오징어 squid'},
+    {e:'🦀',n:'게 크랩 crab'},
+    {e:'🦞',n:'랍스터 가재 lobster'},
+    {e:'🦪',n:'굴 oyster'},
+    {e:'🐙',n:'문어 octopus'},
+    // 채소
+    {e:'🥕',n:'당근 carrot'},
+    {e:'🥦',n:'브로콜리 broccoli'},
+    {e:'🌽',n:'옥수수 corn'},
+    {e:'🍠',n:'고구마 sweet potato'},
+    {e:'🥔',n:'감자 potato'},
+    {e:'🥬',n:'청경채 시금치 상추 채소 leafy green'},
+    {e:'🥗',n:'샐러드 salad'},
+    {e:'🫑',n:'파프리카 피망 bell pepper'},
+    {e:'🌶️',n:'고추 chili pepper'},
+    {e:'🧅',n:'양파 onion'},
+    {e:'🧄',n:'마늘 garlic'},
+    {e:'🫛',n:'완두콩 pea pod'},
+    {e:'🫘',n:'콩 bean'},
+    {e:'🥜',n:'땅콩 peanut'},
+    {e:'🌰',n:'밤 chesnut'},
+    {e:'🥑',n:'아보카도 avocado'},
+    {e:'🍆',n:'가지 eggplant'},
+    {e:'🍅',n:'토마토 tomato'},
+    {e:'🥒',n:'오이 cucumber'},
+    {e:'🌿',n:'허브 herb'},
+    {e:'🌱',n:'새싹 sprout'},
+    {e:'🪴',n:'식물 plant'},
+    {e:'🍃',n:'잎 leaf'},
+    {e:'🍄',n:'버섯 mushroom'},
+    {e:'🧅',n:'양파 대파 onion'},
+    // 과일
+    {e:'🍎',n:'사과 apple'},
+    {e:'🍐',n:'배 pear'},
+    {e:'🍊',n:'귤 오렌지 orange tangerine'},
+    {e:'🍋',n:'레몬 lemon'},
+    {e:'🍇',n:'포도 grape'},
+    {e:'🍓',n:'딸기 strawberry'},
+    {e:'🫐',n:'블루베리 blueberry'},
+    {e:'🍑',n:'복숭아 peach'},
+    {e:'🍒',n:'체리 cherry'},
+    {e:'🍌',n:'바나나 banana'},
+    {e:'🥭',n:'망고 mango'},
+    {e:'🍍',n:'파인애플 pineapple'},
+    {e:'🥝',n:'키위 kiwi'},
+    {e:'🍈',n:'멜론 melon'},
+    {e:'🍉',n:'수박 watermelon'},
+    {e:'🫒',n:'올리브 olive'},
+    {e:'🍑',n:'살구 apricot peach'},
+    // 유제품 / 달걀
+    {e:'🥚',n:'달걀 계란 egg'},
+    {e:'🍳',n:'달걀 후라이 계란 fried egg'},
+    {e:'🧀',n:'치즈 cheese'},
+    {e:'🥛',n:'우유 milk'},
+    {e:'🧈',n:'버터 butter'},
+    {e:'🍦',n:'아이스크림 요거트 yogurt'},
+    // 곡물 / 밥
+    {e:'🌾',n:'쌀 밀 곡물 rice wheat grain'},
+    {e:'🍚',n:'밥 rice'},
+    {e:'🍜',n:'국수 면 noodle'},
+    {e:'🥣',n:'오트밀 죽 porridge oatmeal'},
+    {e:'🍞',n:'빵 bread'},
+    {e:'🥐',n:'크루아상 croissant'},
+    // 조미료 / 소스
+    {e:'🧂',n:'소금 salt'},
+    {e:'🍯',n:'꿀 honey'},
+    {e:'🫙',n:'저장 sauce jar'},
+    {e:'🛢️',n:'오일 기름 oil'},
+    // 음료
+    {e:'💧',n:'물 water'},
+    {e:'🍵',n:'차 tea'},
+    {e:'🧃',n:'주스 juice'},
+];
+
 function ingredientModal(editTarget) {
     return {
         form: {
@@ -85,6 +175,16 @@ function ingredientModal(editTarget) {
         editId:       editTarget?.id || null,
         presetEmojis: PRESET_EMOJIS,
         presetColors: PRESET_COLORS,
+        emojiSearch:  '',
+
+        get displayEmojis() {
+            const q = this.emojiSearch.trim().toLowerCase();
+            if (!q) return this.presetEmojis;
+            return EMOJI_DATA
+                .filter(item => item.n.toLowerCase().includes(q))
+                .map(item => item.e)
+                .slice(0, 30);
+        },
 
         async submit() {
             if (this.editId) {
