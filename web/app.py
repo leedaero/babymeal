@@ -340,12 +340,18 @@ def create_app(config=None):
 
     # ─── 재고 API ─────────────────────────────────────────
 
+    def _fmt_ingredient(row):
+        r = dict(row)
+        if r.get('created_at') is not None:
+            r['created_at'] = str(r['created_at'])[:10]
+        return r
+
     @app.get('/api/ingredients')
     @login_required
     def api_ingredients_list():
         cur = _mod.get_db().cursor()
         cur.execute('SELECT * FROM ingredients ORDER BY name')
-        return jsonify([dict(r) for r in cur.fetchall()])
+        return jsonify([_fmt_ingredient(r) for r in cur.fetchall()])
 
     @app.post('/api/ingredients')
     @login_required
@@ -371,7 +377,7 @@ def create_app(config=None):
         """, d)
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
-        return jsonify(dict(cur.fetchone())), 201
+        return jsonify(_fmt_ingredient(cur.fetchone())), 201
 
     @app.put('/api/ingredients/<int:ing_id>')
     @login_required
@@ -387,7 +393,7 @@ def create_app(config=None):
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s', {**d, 'id': ing_id})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
-        return jsonify(dict(cur.fetchone()))
+        return jsonify(_fmt_ingredient(cur.fetchone()))
 
     @app.delete('/api/ingredients/<int:ing_id>')
     @login_required
@@ -414,7 +420,7 @@ def create_app(config=None):
         )
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
-        return jsonify(dict(cur.fetchone()))
+        return jsonify(_fmt_ingredient(cur.fetchone()))
 
     # ─── 식단 API ─────────────────────────────────────────
 

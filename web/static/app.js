@@ -78,7 +78,7 @@ function ingredientModal(editTarget) {
             name:           editTarget?.name           || '',
             emoji:          editTarget?.emoji          || '🥩',
             color:          editTarget?.color          || '#C0392B',
-            created_at:     editTarget?.created_at ? String(editTarget.created_at).slice(0, 10) : new Date().toISOString().split('T')[0],
+            created_at:     editTarget?.created_at     || new Date().toISOString().split('T')[0],
             weight_per_cube: editTarget?.weight_per_cube || 20,
             total_cubes:    editTarget?.total_cubes    || 10,
         },
