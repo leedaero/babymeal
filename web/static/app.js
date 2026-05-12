@@ -171,6 +171,12 @@ function schedulePage() {
             this.showAddModal = true;
         },
 
+        async deleteMeal(meal) {
+            if (!confirm(`${this.dateLabel(meal.date)} ${this.mealLabel(meal.meal_time)} 식단을 삭제할까요?`)) return;
+            await api(`/api/meals/${meal.id}`, { method: 'DELETE' });
+            await this.load();
+        },
+
         async onMealSaved() { this.showAddModal = false; await this.load(); },
     };
 }

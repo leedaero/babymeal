@@ -40,6 +40,7 @@
             <template x-if="meal.status==='auto-consumed'||meal.status==='confirmed'">
               <button class="btn btn-sm btn-muted" @click="setStatus(meal,'skipped')">↩ 안 먹었어요</button>
             </template>
+            <button class="btn btn-sm btn-danger" @click="deleteMeal(meal)">🗑</button>
           </div>
         </div>
       </template>
