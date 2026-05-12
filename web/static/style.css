@@ -83,28 +83,52 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 100;
-  padding: 1.25rem 0;
+  overflow: hidden;
+  transition: width .22s cubic-bezier(.4,0,.2,1);
+}
+
+.sidebar.collapsed { width: 52px; }
+
+/* 사이드바 헤더 (브랜드 + 토글) */
+.sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 .75rem 0 1rem;
+  height: 56px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-brand {
   display: flex; align-items: center; gap: .5rem;
   font-weight: 700; font-size: 1rem;
   color: var(--text-primary); text-decoration: none;
-  padding: 0 1.25rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: .5rem;
+  white-space: nowrap; overflow: hidden;
+  flex: 1; min-width: 0;
 }
+
+.sidebar-toggle {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--muted-bg);
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; color: var(--text-muted);
+  transition: background .15s;
+}
+.sidebar-toggle:hover { background: var(--border); }
 
 .tab-nav {
   display: flex; flex-direction: column;
   flex: 1;
   gap: .15rem;
-  padding: 0 .75rem;
+  padding: .5rem .5rem 0;
+  overflow: hidden;
 }
 
 .tab-btn {
   display: flex; align-items: center; gap: .5rem;
-  padding: .6rem .75rem;
+  padding: .6rem .65rem;
   font-size: .875rem; font-weight: 500;
   color: var(--text-secondary);
   border: none; background: none; cursor: pointer;
@@ -112,6 +136,7 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   border-left: 3px solid transparent;
   transition: color .15s, background .15s;
   text-decoration: none;
+  white-space: nowrap; overflow: hidden;
 }
 .tab-btn:hover { background: var(--muted-bg); color: var(--text-primary); }
 .tab-btn.active {
@@ -120,21 +145,60 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   border-left-color: var(--accent-green);
 }
 
-.sidebar-bottom {
-  padding: .75rem 1.25rem;
-  border-top: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: .4rem;
+/* 접혔을 때 탭 아이콘 중앙 정렬 */
+.sidebar.collapsed .tab-btn {
+  justify-content: center;
+  padding: .6rem 0;
+  border-left-color: transparent;
+}
+.sidebar.collapsed .tab-btn.active {
+  background: var(--accent-green-bg);
+  border-left-color: transparent;
+  border-radius: var(--radius-sm);
 }
 
-.sidebar-user { font-size: .75rem; color: var(--text-muted); }
+/* 텍스트 숨김 */
+.sidebar-text { transition: opacity .15s; }
+.sidebar.collapsed .sidebar-text { opacity: 0; width: 0; overflow: hidden; }
+.sidebar.collapsed .sidebar-brand { gap: 0; }
+.sidebar.collapsed .sidebar-header { justify-content: center; padding: 0; }
+.sidebar.collapsed .sidebar-toggle { margin: 0 auto; }
+
+.sidebar-bottom {
+  padding: .6rem .5rem;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .4rem;
+  overflow: hidden;
+}
+
+.sidebar-user {
+  font-size: .75rem; color: var(--text-muted);
+  white-space: nowrap; padding: 0 .25rem;
+}
+.sidebar.collapsed .sidebar-user { display: none; }
+.sidebar.collapsed .sidebar-bottom { align-items: center; }
+.sidebar.collapsed .sidebar-bottom .btn { justify-content: center; padding: .4rem; }
+.sidebar.collapsed .sidebar-bottom .btn .sidebar-text { width: 0; overflow: hidden; opacity: 0; }
 
 .content-wrap {
   margin-left: 180px;
   flex: 1;
   min-width: 0;
+  transition: margin-left .22s cubic-bezier(.4,0,.2,1);
 }
+.content-wrap.collapsed { margin-left: 52px; }
 
 .main { max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+
+@media (max-width: 600px) {
+  /* Alpine defaults open=false on mobile, so sidebar starts collapsed.
+     When toggled open, sidebar overlays content (no margin shift). */
+  .sidebar:not(.collapsed) {
+    box-shadow: 4px 0 20px rgba(0,0,0,.12);
+    z-index: 200;
+  }
+  .content-wrap { margin-left: 52px !important; }
+}
 
 /* ─── 큐브 그리드 ─── */
 

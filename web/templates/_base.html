@@ -4,32 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}치밀한 이유식{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="{{ url_for('static', filename='app.js') }}?v=2"></script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=3"></script>
   <script>window._csrfToken = {{ csrf_token()|tojson }};</script>
 </head>
 <body>
-<div class="layout">
+<div class="layout"
+     x-data="{ open: JSON.parse(localStorage.getItem('sidebarOpen') ?? String(window.innerWidth > 600)) }"
+     x-init="$watch('open', v => localStorage.setItem('sidebarOpen', v))">
 
-  <aside class="sidebar">
-    <a href="/" class="sidebar-brand">
-      <span>🍼</span><span>치밀한 이유식</span>
-    </a>
+  <aside class="sidebar" :class="open ? '' : 'collapsed'">
+    <div class="sidebar-header">
+      <a href="/" class="sidebar-brand">
+        <span class="sidebar-icon">🍼</span>
+        <span class="sidebar-text">치밀한 이유식</span>
+      </a>
+      <button class="sidebar-toggle" @click="open = !open" :title="open ? '접기' : '펼치기'">
+        <span x-text="open ? '◀' : '▶'"></span>
+      </button>
+    </div>
     <nav class="tab-nav">
-      <a href="/"         class="tab-btn {% if active_tab == 'inventory' %}active{% endif %}">🧊 재고현황</a>
-      <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">📅 식단표</a>
+      <a href="/"         class="tab-btn {% if active_tab == 'inventory' %}active{% endif %}">
+        <span class="sidebar-icon">🧊</span><span class="sidebar-text">재고현황</span>
+      </a>
+      <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">
+        <span class="sidebar-icon">📅</span><span class="sidebar-text">식단표</span>
+      </a>
       {% if is_admin %}
-      <a href="/settings" class="tab-btn {% if active_tab == 'settings'  %}active{% endif %}">⚙️ 설정</a>
+      <a href="/settings" class="tab-btn {% if active_tab == 'settings'  %}active{% endif %}">
+        <span class="sidebar-icon">⚙️</span><span class="sidebar-text">설정</span>
+      </a>
       {% endif %}
     </nav>
     <div class="sidebar-bottom">
-      <span class="sidebar-user">{{ username }}</span>
-      <a href="/logout" class="btn btn-sm btn-muted">로그아웃</a>
+      <span class="sidebar-user"><span class="sidebar-icon">👤</span><span class="sidebar-text">{{ username }}</span></span>
+      <a href="/logout" class="btn btn-sm btn-muted">
+        <span class="sidebar-icon">🚪</span><span class="sidebar-text">로그아웃</span>
+      </a>
     </div>
   </aside>
 
-  <div class="content-wrap">
+  <div class="content-wrap" :class="open ? '' : 'collapsed'">
     <main class="main">
       {% block content %}{% endblock %}
     </main>
