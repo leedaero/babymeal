@@ -551,9 +551,18 @@ def create_app(config=None):
     @admin_required
     def api_notification_test():
         cfg = _db.load_config()
-        if not cfg.get('discord_webhook', '').strip():
-            return jsonify({'error': 'discord_webhook이 config.json에 설정되지 않았습니다'}), 400
-        _send_low_stock_notification()
+        webhook = cfg.get('discord_webhook', '').strip()
+        if not webhook:
+            return jsonify({'error': 'config.json에 discord_webhook이 비어 있습니다'}), 400
+        try:
+            payload = json.dumps({"content": "🍼 **치밀한 이유식** — 디스코드 알림 테스트입니다 ✅"}).encode("utf-8")
+            req = urllib.request.Request(
+                webhook, data=payload,
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            urllib.request.urlopen(req, timeout=10)
+        except Exception as e:
+            return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
 
     @app.put('/api/notification-settings')
