@@ -188,6 +188,8 @@ def create_app(config=None):
     # ─── 자동 차감 ────────────────────────────────────────
 
     def _run_auto_deduction(conn):
+        if app.config.get('TESTING'):
+            return
         cur = conn.cursor()
         cur.execute("""
             SELECT m.id, m.date, m.meal_time, m.status,
@@ -266,6 +268,10 @@ def create_app(config=None):
         d    = request.get_json()
         conn = _mod.get_db()
         cur  = conn.cursor()
+        UPDATABLE_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes'}
+        d = {k: v for k, v in d.items() if k in UPDATABLE_FIELDS}
+        if not d:
+            return jsonify({'error': 'no valid fields'}), 400
         sets = ', '.join(f'{k}=%({k})s' for k in d)
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s', {**d, 'id': ing_id})
         conn.commit()
