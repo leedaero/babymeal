@@ -26,7 +26,10 @@
       <div class="cube-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;">
           <div class="cube-icon" :style="`background-color:${ing.color}22`" x-text="ing.emoji"></div>
-          <button class="btn btn-sm btn-muted" @click="openEdit(ing)" style="padding:.2rem .5rem;">✏️</button>
+          <div style="display:flex;gap:.25rem;">
+            <button class="btn btn-sm btn-muted" @click="openEdit(ing)" style="padding:.2rem .5rem;">✏️</button>
+            <button class="btn btn-sm btn-danger" @click="deleteIngredient(ing)" style="padding:.2rem .5rem;">🗑</button>
+          </div>
         </div>
         <div>
           <p class="cube-name" x-text="ing.name"></p>
