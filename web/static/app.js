@@ -170,6 +170,19 @@ const EMOJI_DATA = [
     {e:'🧃',n:'주스 juice'},
 ];
 
+// ─── emojibase lazy-loader (모달 열릴 때 1회 fetch, 이후 캐시) ───
+let _emojibaseCache = null;
+async function loadEmojibaseData() {
+    if (_emojibaseCache) return _emojibaseCache;
+    try {
+        const r = await fetch('https://cdn.jsdelivr.net/npm/emojibase-data@7/en/compact.json');
+        _emojibaseCache = await r.json(); // [{emoji, label, tags:[...]}, ...]
+    } catch {
+        _emojibaseCache = [];
+    }
+    return _emojibaseCache;
+}
+
 function ingredientModal(editTarget) {
     return {
         form: {
@@ -184,14 +197,48 @@ function ingredientModal(editTarget) {
         presetEmojis: PRESET_EMOJIS,
         presetColors: PRESET_COLORS,
         emojiSearch:  '',
+        emojibaseAll: [],
+        emojibaseReady: false,
+        emojibaseLoading: false,
+
+        async init() {
+            this.loadEmojis();
+        },
+
+        async loadEmojis() {
+            if (this.emojibaseReady || this.emojibaseLoading) return;
+            this.emojibaseLoading = true;
+            this.emojibaseAll = await loadEmojibaseData();
+            this.emojibaseLoading = false;
+            this.emojibaseReady = true;
+        },
 
         get displayEmojis() {
             const q = this.emojiSearch.trim().toLowerCase();
             if (!q) return this.presetEmojis;
-            return EMOJI_DATA
-                .filter(item => item.n.toLowerCase().includes(q))
-                .map(item => item.e)
-                .slice(0, 30);
+
+            const seen = new Set();
+            const results = [];
+
+            // 한국어 EMOJI_DATA 우선 검색
+            for (const item of EMOJI_DATA) {
+                if (item.n.toLowerCase().includes(q) && !seen.has(item.e)) {
+                    seen.add(item.e);
+                    results.push(item.e);
+                }
+            }
+
+            // emojibase 영문 검색 (label + tags)
+            for (const item of this.emojibaseAll) {
+                if (results.length >= 80) break;
+                const text = (item.label + ' ' + (item.tags || []).join(' ')).toLowerCase();
+                if (text.includes(q) && !seen.has(item.emoji)) {
+                    seen.add(item.emoji);
+                    results.push(item.emoji);
+                }
+            }
+
+            return results;
         },
 
         async submit() {

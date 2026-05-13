@@ -79,8 +79,14 @@
                       @click="form.emoji=e; emojiSearch=''" type="button" x-text="e"></button>
             </template>
           </div>
-          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.35rem;"
-             x-show="!emojiSearch">자주 쓰는 이모지 • 검색으로 더 찾기</p>
+          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.35rem;">
+            <template x-if="emojibaseLoading">
+              <span>⏳ 이모지 데이터 로딩 중…</span>
+            </template>
+            <template x-if="!emojibaseLoading && !emojiSearch">
+              <span x-text="emojibaseReady ? '자주 쓰는 이모지 • 검색으로 1,800개 이상 찾기' : '자주 쓰는 이모지 • 검색으로 더 찾기'"></span>
+            </template>
+          </p>
         </div>
         <div class="form-group">
           <label class="form-label">큐브 색상</label>
