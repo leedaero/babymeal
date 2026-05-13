@@ -37,6 +37,18 @@
       </a>
       {% endif %}
     </nav>
+    {% if is_admin and all_users %}
+    <div style="padding:.5rem 1rem;">
+      <select onchange="switchUser(this.value)"
+              style="width:100%;padding:.3rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.8rem;cursor:pointer;">
+        {% for u in all_users %}
+        <option value="{{ u.id }}" {% if u.id == view_user_id %}selected{% endif %}>
+          {{ u.username }}{% if u.id == view_user_id %} ✓{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
     <div class="sidebar-bottom">
       <span class="sidebar-user"><span class="sidebar-icon">👤</span><span class="sidebar-text">{{ username }}</span></span>
       <a href="/logout" class="btn btn-sm btn-muted">
@@ -45,6 +57,14 @@
     </div>
   </aside>
 
+  {% if is_viewing_other %}
+  <div onclick="resetUser()"
+       style="position:fixed;top:0;left:0;right:0;z-index:999;background:#e67e22;color:#fff;
+              text-align:center;padding:.4rem;font-size:.85rem;cursor:pointer;">
+    👁 <strong>{{ view_username }}</strong> 계정 보는 중 — 클릭하여 본인으로 복귀
+  </div>
+  {% endif %}
+
   <div class="content-wrap" :class="open ? '' : 'collapsed'">
     <main class="main">
       {% block content %}{% endblock %}
@@ -52,5 +72,20 @@
   </div>
 
 </div>
+  <script>
+  function switchUser(userId) {
+    fetch('/api/admin/switch-user', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': window._csrfToken || ''},
+      body: JSON.stringify({user_id: parseInt(userId)})
+    }).then(r => r.ok && location.reload());
+  }
+  function resetUser() {
+    fetch('/api/admin/switch-user', {
+      method: 'DELETE',
+      headers: {'X-CSRF-Token': window._csrfToken || ''}
+    }).then(r => r.ok && location.reload());
+  }
+  </script>
 </body>
 </html>

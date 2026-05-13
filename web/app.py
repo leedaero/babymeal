@@ -211,24 +211,18 @@ def create_app(config=None):
     @login_required
     def inventory_page():
         _run_auto_deduction(_mod.get_db())
-        return render_template('inventory.html',
-                               username=session.get('username'),
-                               is_admin=session.get('is_admin', False))
+        return render_template('inventory.html', **_page_ctx())
 
     @app.route('/schedule')
     @login_required
     def schedule_page():
         _run_auto_deduction(_mod.get_db())
-        return render_template('schedule.html',
-                               username=session.get('username'),
-                               is_admin=session.get('is_admin', False))
+        return render_template('schedule.html', **_page_ctx())
 
     @app.route('/settings')
     @admin_required
     def settings_page():
-        return render_template('settings.html',
-                               username=session.get('username'),
-                               is_admin=session.get('is_admin', False))
+        return render_template('settings.html', **_page_ctx())
 
     # ─── 자동 차감 ────────────────────────────────────────
 
@@ -293,6 +287,27 @@ def create_app(config=None):
         conn.commit()
         cur.execute('SELECT id, username, is_admin, is_active FROM users WHERE id=%s', (user_id,))
         return jsonify(dict(cur.fetchone()))
+
+    def _page_ctx():
+        uid = session['user_id']
+        vid = session.get('view_as_user_id', uid)
+        ctx = {
+            'username': session.get('username'),
+            'is_admin': session.get('is_admin', False),
+            'is_viewing_other': vid != uid,
+            'view_username': session.get('username'),
+            'all_users': None,
+            'view_user_id': vid,
+        }
+        if session.get('is_admin'):
+            cur = _mod.get_db().cursor()
+            cur.execute('SELECT id, username FROM users WHERE is_active=1 ORDER BY id')
+            ctx['all_users'] = [dict(r) for r in cur.fetchall()]
+            if vid != uid:
+                cur.execute('SELECT username FROM users WHERE id=%s', (vid,))
+                row = cur.fetchone()
+                ctx['view_username'] = row['username'] if row else str(vid)
+        return ctx
 
     def _run_auto_deduction(conn):
         if app.config.get('TESTING'):
