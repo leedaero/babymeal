@@ -1,5 +1,13 @@
 /* ─── 치밀한 이유식 — Alpine.js Components ─── */
 
+function emojiToCdnUrl(emoji) {
+    const cp = [...emoji]
+        .filter(c => c.codePointAt(0) !== 0xFE0F)
+        .map(c => c.codePointAt(0).toString(16))
+        .join('-');
+    return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/${cp}.png`;
+}
+
 // ─── API Helper (animation 동일 패턴) ───
 async function api(url, options = {}) {
     const defaults = {

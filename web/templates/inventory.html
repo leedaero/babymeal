@@ -84,7 +84,14 @@
           <div class="emoji-grid">
             <template x-for="e in displayEmojis" :key="e">
               <button class="emoji-btn" :class="form.emoji===e?'selected':''"
-                      @click="form.emoji=e; emojiSearch=''" type="button" x-text="e"></button>
+                      @click="form.emoji=e; emojiSearch=''" type="button"
+                      :title="e">
+                <img :src="emojiToCdnUrl(e)" width="24" height="24"
+                     style="object-fit:contain;pointer-events:none;"
+                     loading="lazy" alt=""
+                     @error="$el.style.display='none'; $el.nextElementSibling.style.display='inline'">
+                <span style="display:none" x-text="e"></span>
+              </button>
             </template>
           </div>
           <p style="font-size:.72rem;color:var(--text-muted);margin-top:.35rem;">
