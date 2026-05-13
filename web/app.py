@@ -379,7 +379,19 @@ def create_app(config=None):
         """, d)
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
-        return jsonify(_fmt_ingredient(cur.fetchone())), 201
+        ing = dict(cur.fetchone())
+        if not app.config.get('TESTING'):
+            cfg = _db.load_config()
+            mc = minio_storage.get_minio_client(cfg)
+            if mc:
+                bucket = cfg.get('minio', {}).get('bucket', 'babymeal')
+                minio_storage.ensure_bucket(mc, bucket)
+                img_url = save_emoji_image(mc, bucket, ing['emoji'])
+                if img_url:
+                    cur.execute('UPDATE ingredients SET image_url=%s WHERE id=%s', (img_url, ing['id']))
+                    conn.commit()
+                    ing['image_url'] = img_url
+        return jsonify(_fmt_ingredient(ing)), 201
 
     @app.put('/api/ingredients/<int:ing_id>')
     @login_required
@@ -395,7 +407,19 @@ def create_app(config=None):
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s', {**d, 'id': ing_id})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
-        return jsonify(_fmt_ingredient(cur.fetchone()))
+        ing = dict(cur.fetchone())
+        if not app.config.get('TESTING') and 'emoji' in d:
+            cfg = _db.load_config()
+            mc = minio_storage.get_minio_client(cfg)
+            if mc:
+                bucket = cfg.get('minio', {}).get('bucket', 'babymeal')
+                minio_storage.ensure_bucket(mc, bucket)
+                img_url = save_emoji_image(mc, bucket, ing['emoji'])
+                if img_url:
+                    cur.execute('UPDATE ingredients SET image_url=%s WHERE id=%s', (img_url, ing['id']))
+                    conn.commit()
+                    ing['image_url'] = img_url
+        return jsonify(_fmt_ingredient(ing))
 
     @app.delete('/api/ingredients/<int:ing_id>')
     @login_required
