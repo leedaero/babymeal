@@ -101,3 +101,21 @@ def test_api_adjust_stock(authed_client):
         )
     assert resp.status_code == 200
     assert json.loads(resp.data)['current_cubes'] == 7
+
+
+def test_api_emoji_image_found(authed_client):
+    with patch('web.app._db.load_config', return_value={'minio': {'bucket': 'babymeal'}}), \
+         patch('web.app.minio_storage.get_minio_client', return_value=MagicMock()), \
+         patch('web.app.minio_storage.get_bytes', return_value=(b'\x89PNG', 'image/png')):
+        resp = authed_client.get('/api/emoji/1f955')
+    assert resp.status_code == 200
+    assert resp.content_type == 'image/png'
+    assert resp.data == b'\x89PNG'
+
+
+def test_api_emoji_image_not_found(authed_client):
+    with patch('web.app._db.load_config', return_value={'minio': {}}), \
+         patch('web.app.minio_storage.get_minio_client', return_value=None), \
+         patch('web.app.minio_storage.get_bytes', return_value=(None, None)):
+        resp = authed_client.get('/api/emoji/unknown')
+    assert resp.status_code == 404

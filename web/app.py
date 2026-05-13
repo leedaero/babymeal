@@ -10,11 +10,13 @@ if PROJECT_ROOT not in sys.path:
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, jsonify, flash, g,
+    url_for, session, jsonify, flash, g, make_response,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db as _db
+import minio_storage
+from emoji_image import save_emoji_image
 from deduction import compute_deductions
 
 # Module-level references exposed for patching in tests
@@ -421,6 +423,22 @@ def create_app(config=None):
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         return jsonify(_fmt_ingredient(cur.fetchone()))
+
+    # ─── 이모지 이미지 API ────────────────────────────────────
+
+    @app.get('/api/emoji/<codepoint>')
+    @login_required
+    def api_emoji_image(codepoint):
+        cfg = _db.load_config()
+        mc = minio_storage.get_minio_client(cfg)
+        bucket = cfg.get('minio', {}).get('bucket', 'babymeal')
+        data, ct = minio_storage.get_bytes(mc, bucket, f'emoji/{codepoint}.png')
+        if data:
+            resp = make_response(data)
+            resp.headers['Content-Type'] = ct or 'image/png'
+            resp.headers['Cache-Control'] = 'public, max-age=604800'
+            return resp
+        return '', 404
 
     # ─── 식단 API ─────────────────────────────────────────
 
