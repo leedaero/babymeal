@@ -77,7 +77,7 @@ function inventoryPage() {
 }
 
 // ─── 재료 모달 ───
-const PRESET_EMOJIS = ['🥩','🐟','🥕','🥦','🌽','🍠','🥬','🫑','🧅','🍗','🥚','🧀','🍖','🫛','🥑'];
+const PRESET_EMOJIS = ['🥩','🐟','🥕','🥦','🌽','🍠','🥬','🫜','🫑','🧅','🍗','🥚','🧀','🍖','🫛','🥑'];
 const PRESET_COLORS = ['#C0392B','#E67E22','#F1C40F','#27AE60','#2980B9','#8E44AD','#1ABC9C','#E74C3C'];
 
 const EMOJI_DATA = [
@@ -108,6 +108,7 @@ const EMOJI_DATA = [
     {e:'🍠',n:'고구마 sweet potato'},
     {e:'🥔',n:'감자 potato'},
     {e:'🥬',n:'청경채 시금치 상추 채소 leafy green'},
+    {e:'🫜',n:'무 무우 radish daikon 뿌리채소 turnip beet root vegetable'},
     {e:'🥗',n:'샐러드 salad'},
     {e:'🫑',n:'파프리카 피망 bell pepper'},
     {e:'🌶️',n:'고추 chili pepper'},
