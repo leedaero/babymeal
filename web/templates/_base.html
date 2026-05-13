@@ -78,13 +78,13 @@
       method: 'POST',
       headers: {'Content-Type':'application/json','X-CSRF-Token': window._csrfToken || ''},
       body: JSON.stringify({user_id: parseInt(userId)})
-    }).then(r => r.ok && location.reload());
+    }).then(r => { if (r.ok) location.reload(); else r.json().then(d => alert(d.error || '전환 실패')); });
   }
   function resetUser() {
     fetch('/api/admin/switch-user', {
       method: 'DELETE',
       headers: {'X-CSRF-Token': window._csrfToken || ''}
-    }).then(r => r.ok && location.reload());
+    }).then(r => { if (r.ok) location.reload(); else alert('복귀 실패'); });
   }
   </script>
 </body>

@@ -299,14 +299,15 @@ def create_app(config=None):
             'all_users': None,
             'view_user_id': vid,
         }
+        if vid != uid:
+            cur = _mod.get_db().cursor()
+            cur.execute('SELECT username FROM users WHERE id=%s', (vid,))
+            row = cur.fetchone()
+            ctx['view_username'] = row['username'] if row else str(vid)
         if session.get('is_admin'):
             cur = _mod.get_db().cursor()
             cur.execute('SELECT id, username FROM users WHERE is_active=1 ORDER BY id')
             ctx['all_users'] = [dict(r) for r in cur.fetchall()]
-            if vid != uid:
-                cur.execute('SELECT username FROM users WHERE id=%s', (vid,))
-                row = cur.fetchone()
-                ctx['view_username'] = row['username'] if row else str(vid)
         return ctx
 
     def _run_auto_deduction(conn):
