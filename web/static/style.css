@@ -224,6 +224,7 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem;
+  border: 1px solid rgba(0,0,0,.08);
 }
 .cube-name { font-weight: 600; font-size: .875rem; }
 .cube-unit { font-size: .75rem; color: var(--text-muted); }
