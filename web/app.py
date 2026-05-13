@@ -514,7 +514,8 @@ def create_app(config=None):
     def api_meals_list():
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute('SELECT id FROM meals ORDER BY date, meal_time')
+        cur.execute('SELECT id FROM meals WHERE user_id=%s ORDER BY date, meal_time',
+                    (get_view_user_id(),))
         return jsonify([_meal_with_ingredients(conn, r['id']) for r in cur.fetchall()])
 
     @app.post('/api/meals')
@@ -528,8 +529,8 @@ def create_app(config=None):
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute(
-            'INSERT INTO meals (date, meal_time, note) VALUES (%s, %s, %s)',
-            (d['date'], d['meal_time'], d.get('note', ''))
+            'INSERT INTO meals (date, meal_time, note, user_id) VALUES (%s, %s, %s, %s)',
+            (d['date'], d['meal_time'], d.get('note', ''), session['user_id'])
         )
         meal_id = cur.lastrowid
         for mi in d.get('ingredients', []):
@@ -545,7 +546,8 @@ def create_app(config=None):
     def api_meals_delete(meal_id):
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute('DELETE FROM meals WHERE id=%s', (meal_id,))
+        cur.execute('DELETE FROM meals WHERE id=%s AND user_id=%s',
+                    (meal_id, get_view_user_id()))
         conn.commit()
         return jsonify({'ok': True})
 
@@ -558,7 +560,8 @@ def create_app(config=None):
             return jsonify({'error': '유효하지 않은 상태입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute('SELECT status FROM meals WHERE id=%s', (meal_id,))
+        cur.execute('SELECT status FROM meals WHERE id=%s AND user_id=%s',
+                    (meal_id, get_view_user_id()))
         row = cur.fetchone()
         if not row:
             return jsonify({'error': 'not found'}), 404
@@ -569,7 +572,8 @@ def create_app(config=None):
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
             _apply_stock_delta(conn, meal_id, direction='deduct')
 
-        cur.execute('UPDATE meals SET status=%s WHERE id=%s', (new_status, meal_id))
+        cur.execute('UPDATE meals SET status=%s WHERE id=%s AND user_id=%s',
+                    (new_status, meal_id, get_view_user_id()))
         conn.commit()
         return jsonify(_meal_with_ingredients(conn, meal_id))
 
