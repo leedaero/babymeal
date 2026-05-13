@@ -61,7 +61,8 @@
             <div class="ing-row">
               <span class="ing-row-emoji" x-text="mi.emoji"></span>
               <span class="ing-row-name"  x-text="mi.name"></span>
-              <span style="font-size:.82rem;color:var(--text-muted);" x-text="`${mi.grams}g`"></span>
+              <span style="font-size:.82rem;color:var(--text-muted);"
+                    x-text="mi.unit_type==='quantity' ? `${mi.grams}개` : `${mi.grams}g`"></span>
             </div>
           </template>
         </div>
@@ -100,7 +101,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">재료 용량 (g)</label>
+          <label class="form-label">재료 용량</label>
           <template x-if="ingredients.length===0">
             <p style="font-size:.8rem;color:var(--text-muted);padding:.5rem 0;">
               먼저 재고 탭에서 재료를 추가해주세요
@@ -110,10 +111,12 @@
             <div class="ing-row">
               <span class="ing-row-emoji" x-text="ing.emoji"></span>
               <span class="ing-row-name"  x-text="ing.name"></span>
+              <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
+                    x-text="ing.unit_type==='quantity' ? '수량' : '중량'"></span>
               <input class="ing-row-input" type="number" min="0" placeholder="0"
                      :value="grams[ing.id]||''"
                      @input="grams[ing.id]=parseInt($event.target.value)||0">
-              <span class="ing-row-unit">g</span>
+              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : 'g'"></span>
             </div>
           </template>
         </div>

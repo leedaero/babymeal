@@ -535,7 +535,7 @@ def create_app(config=None):
         meal = dict(cur.fetchone())
         meal['date'] = str(meal['date'])
         cur.execute("""
-            SELECT mi.ingredient_id, mi.grams, i.name, i.emoji, i.weight_per_cube
+            SELECT mi.ingredient_id, mi.grams, i.name, i.emoji, i.weight_per_cube, i.unit_type
             FROM meal_ingredients mi
             JOIN ingredients i ON i.id = mi.ingredient_id
             WHERE mi.meal_id=%s
