@@ -263,6 +263,71 @@ function ingredientModal(editTarget) {
     };
 }
 
+// ─── 통계 ───
+function statsPage() {
+    return {
+        ingredients: [],
+        _chart: null,
+
+        async init() {
+            this.ingredients = await api('/api/ingredients') || [];
+            await this.$nextTick();
+            this._renderChart();
+        },
+
+        get totalCubes() {
+            return this.ingredients.reduce((s, i) => s + (i.current_cubes || 0), 0);
+        },
+
+        get lowStockCount() {
+            return this.ingredients.filter(i => i.current_cubes <= 3).length;
+        },
+
+        _renderChart() {
+            const canvas = document.getElementById('stockChart');
+            if (!canvas || !this.ingredients.length) return;
+            if (this._chart) this._chart.destroy();
+
+            const sorted = [...this.ingredients].sort((a, b) => b.current_cubes - a.current_cubes);
+            const isLow  = i => i.current_cubes <= 3;
+
+            this._chart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(i => `${i.emoji} ${i.name}`),
+                    datasets: [{
+                        data: sorted.map(i => i.current_cubes),
+                        backgroundColor: sorted.map(i => isLow(i) ? '#e74c3cBB' : (i.color || '#888') + 'BB'),
+                        borderColor:     sorted.map(i => isLow(i) ? '#e74c3c'   : (i.color || '#888')),
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }],
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw}개` } },
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: '#888', font: { size: 11 } },
+                            grid: { color: 'rgba(0,0,0,.06)' },
+                        },
+                        y: {
+                            ticks: { color: '#555', font: { size: 12 } },
+                            grid: { display: false },
+                        },
+                    },
+                },
+            });
+        },
+    };
+}
+
 // ─── 식단표 ───
 const MEAL_LABELS = { morning:'아침', lunch:'점심', snack:'간식', dinner:'저녁' };
 const MEAL_ORDER  = ['morning','lunch','snack','dinner'];

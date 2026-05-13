@@ -8,6 +8,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="{{ url_for('static', filename='app.js') }}?v=3"></script>
   <script>window._csrfToken = {{ csrf_token()|tojson }};</script>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 <div class="layout"
@@ -30,6 +31,9 @@
       </a>
       <a href="/schedule" class="tab-btn {% if active_tab == 'schedule'  %}active{% endif %}">
         <span class="sidebar-icon">📅</span><span class="sidebar-text">식단표</span>
+      </a>
+      <a href="/stats" class="tab-btn {% if active_tab == 'stats' %}active{% endif %}">
+        <span class="sidebar-icon">📊</span><span class="sidebar-text">통계</span>
       </a>
       {% if is_admin %}
       <a href="/settings" class="tab-btn {% if active_tab == 'settings'  %}active{% endif %}">

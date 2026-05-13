@@ -219,6 +219,11 @@ def create_app(config=None):
         _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return render_template('schedule.html', **_page_ctx())
 
+    @app.route('/stats')
+    @login_required
+    def stats_page():
+        return render_template('stats.html', **_page_ctx())
+
     @app.route('/settings')
     @admin_required
     def settings_page():

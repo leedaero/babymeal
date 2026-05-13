@@ -410,6 +410,32 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 
+/* ─── 통계 ─── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+.stat-value { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: .2rem; }
+.stat-value.stat-danger { color: #e74c3c; }
+.stat-label { font-size: .78rem; color: var(--text-muted); }
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.chart-title { font-size: .875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; }
+
 .ing-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
 .ing-row-emoji { font-size: 1.2rem; width: 28px; flex-shrink: 0; }
 .ing-row-name  { flex: 1; font-size: .875rem; }

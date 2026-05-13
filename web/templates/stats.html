@@ -1,0 +1,39 @@
+{% extends "_base.html" %}
+{% set active_tab = 'stats' %}
+{% block title %}통계 — 치밀한 이유식{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div x-data="statsPage()" x-init="init()">
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-value" x-text="ingredients.length + '가지'">—</p>
+      <p class="stat-label">재료 종류</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-value" x-text="totalCubes + '개'">—</p>
+      <p class="stat-label">총 큐브 수</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-value" :class="lowStockCount > 0 ? 'stat-danger' : ''" x-text="lowStockCount + '가지'">—</p>
+      <p class="stat-label">재고 부족 (3개 이하)</p>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <p class="chart-title">재료별 재고 현황</p>
+    <template x-if="ingredients.length === 0">
+      <p style="text-align:center;color:var(--text-muted);padding:2rem 0;">등록된 재료가 없습니다.</p>
+    </template>
+    <template x-if="ingredients.length > 0">
+      <div :style="`height:${Math.max(ingredients.length * 46, 120)}px`">
+        <canvas id="stockChart"></canvas>
+      </div>
+    </template>
+  </div>
+
+</div>
+{% endblock %}
