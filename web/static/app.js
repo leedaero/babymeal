@@ -339,6 +339,7 @@ function schedulePage() {
         selectedMeal: null,
         showAddModal: false,
         addDefaultDate: '',
+        addDefaultMealTime: 'morning',
         _today: new Date(),
 
         async init() {
@@ -385,11 +386,20 @@ function schedulePage() {
             return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
         },
 
-        mealsForDate(date) {
-            const ds = this._dateStr(date);
-            return this.meals
-                .filter(m => m.date === ds)
-                .sort((a, b) => MEAL_ORDER.indexOf(a.meal_time) - MEAL_ORDER.indexOf(b.meal_time));
+        get _mealMap() {
+            const m = {};
+            for (const meal of this.meals) m[`${meal.date}|${meal.meal_time}`] = meal;
+            return m;
+        },
+
+        mealAt(date, mealTime) {
+            return this._mealMap[`${this._dateStr(date)}|${mealTime}`] || null;
+        },
+
+        clickSlot(date, mealTime) {
+            const meal = this.mealAt(date, mealTime);
+            if (meal) this.openDetail(meal);
+            else      this.openAddMeal(this._dateStr(date), mealTime);
         },
 
         isToday(date) {
@@ -402,8 +412,9 @@ function schedulePage() {
         openDetail(meal)  { this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] }; },
         closeDetail()     { this.selectedMeal = null; },
 
-        openAddMeal(date) {
-            this.addDefaultDate = date || this._dateStr(new Date());
+        openAddMeal(date, mealTime = 'morning') {
+            this.addDefaultDate     = date || this._dateStr(new Date());
+            this.addDefaultMealTime = mealTime;
             this.showAddModal = true;
         },
 
@@ -449,10 +460,10 @@ function schedulePage() {
 }
 
 // ─── 식단 추가 모달 ───
-function mealModal(defaultDate, ingredients) {
+function mealModal(defaultDate, defaultMealTime, ingredients) {
     return {
         date:      defaultDate || new Date().toISOString().split('T')[0],
-        mealTime: 'morning',
+        mealTime: defaultMealTime || 'morning',
         grams:    {},
         mealTimes: [
             { value:'morning', label:'아침' },

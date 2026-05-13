@@ -25,15 +25,13 @@
     <div class="cal-grid">
       <template x-for="cell in calendarDays" :key="cell.d.getTime()">
         <div class="cal-cell" :class="{ 'cal-today': isToday(cell.d), 'cal-other': cell.other }">
-          <div class="cal-cell-head">
-            <span class="cal-date-num" x-text="cell.d.getDate()"></span>
-            <button class="cal-add-btn" @click.stop="openAddMeal(_dateStr(cell.d))" title="식단 추가">+</button>
-          </div>
-          <template x-for="meal in mealsForDate(cell.d)" :key="meal.id">
-            <div class="cal-chip"
-                 :style="`background:${chipColor(meal.status)}22;border-left:3px solid ${chipColor(meal.status)}`"
-                 @click="openDetail(meal)">
-              <span x-text="MEAL_LABELS[meal.meal_time]"></span>
+          <span class="cal-date-num" x-text="cell.d.getDate()"></span>
+          <template x-for="mt in ['morning','lunch','snack','dinner']" :key="mt">
+            <div class="cal-slot"
+                 :class="mealAt(cell.d, mt) ? 'cal-slot-filled' : 'cal-slot-empty'"
+                 :style="mealAt(cell.d, mt) ? `background:${chipColor(mealAt(cell.d,mt).status)}22;border-left:3px solid ${chipColor(mealAt(cell.d,mt).status)}` : ''"
+                 @click="clickSlot(cell.d, mt)">
+              <span x-text="MEAL_LABELS[mt]"></span>
             </div>
           </template>
         </div>
@@ -84,7 +82,7 @@
   <!-- 식단 추가 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">
-      <div class="modal-box" x-data="mealModal(addDefaultDate, ingredients)">
+      <div class="modal-box" x-data="mealModal(addDefaultDate, addDefaultMealTime, ingredients)">
         <p class="modal-title">식단 추가</p>
         <div class="form-row">
           <div class="form-group">
