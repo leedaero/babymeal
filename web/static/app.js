@@ -86,7 +86,7 @@ function inventoryPage() {
 
 // ─── 재료 모달 ───
 const PRESET_EMOJIS = ['🥩','🐟','🥕','🥦','🌽','🍠','🥬','🫜','🫑','🧅','🍗','🥚','🧀','🍖','🫛','🥑'];
-const PRESET_COLORS = ['#C0392B','#E67E22','#F1C40F','#27AE60','#2980B9','#8E44AD','#1ABC9C','#E74C3C'];
+const PRESET_COLORS = ['#C0392B','#E67E22','#F1C40F','#27AE60','#2980B9','#8E44AD','#1ABC9C','#E74C3C','#FFFFFF'];
 
 const EMOJI_DATA = [
     // 육류
@@ -202,6 +202,7 @@ function ingredientModal(editTarget) {
             created_at:     editTarget?.created_at     || new Date().toISOString().split('T')[0],
             weight_per_cube: editTarget?.weight_per_cube || 20,
             total_cubes:    editTarget?.total_cubes    || 10,
+            unit_type:      editTarget?.unit_type      || 'weight',
         },
         editId:       editTarget?.id || null,
         presetEmojis: PRESET_EMOJIS,

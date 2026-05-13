@@ -41,7 +41,9 @@
         </div>
         <div>
           <p class="cube-name" x-text="ing.name"></p>
-          <p class="cube-unit" x-text="`${ing.weight_per_cube}g / 큐브`"></p>
+          <template x-if="ing.unit_type !== 'quantity'">
+            <p class="cube-unit" x-text="`${ing.weight_per_cube}g / 큐브`"></p>
+          </template>
         </div>
         <template x-if="expiryStatus(ing.created_at) === 'warning'">
           <span class="badge badge-warning" x-text="`⚠️ ${expiryDays(ing.created_at)}일 경과`"></span>
@@ -113,15 +115,28 @@
             </template>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">큐브 타입</label>
+          <div style="display:flex;gap:.5rem;">
+            <button type="button"
+                    :class="form.unit_type==='weight'?'btn btn-sm btn-green':'btn btn-sm btn-muted'"
+                    @click="form.unit_type='weight'">중량 (g)</button>
+            <button type="button"
+                    :class="form.unit_type==='quantity'?'btn btn-sm btn-green':'btn btn-sm btn-muted'"
+                    @click="form.unit_type='quantity'">수량 (개)</button>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">제작일</label>
             <input class="form-input" type="date" x-model="form.created_at" required>
           </div>
-          <div class="form-group">
-            <label class="form-label">1큐브 중량 (g)</label>
-            <input class="form-input" type="number" x-model.number="form.weight_per_cube" min="1" required>
-          </div>
+          <template x-if="form.unit_type === 'weight'">
+            <div class="form-group">
+              <label class="form-label">1큐브 중량 (g)</label>
+              <input class="form-input" type="number" x-model.number="form.weight_per_cube" min="1" required>
+            </div>
+          </template>
         </div>
         <div class="form-group">
           <label class="form-label">총 제작 개수</label>

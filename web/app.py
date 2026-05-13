@@ -316,7 +316,7 @@ def create_app(config=None):
         cur = conn.cursor()
         cur.execute("""
             SELECT m.id, m.date, m.meal_time, m.status,
-                   mi.ingredient_id, mi.grams, i.weight_per_cube
+                   mi.ingredient_id, mi.grams, i.weight_per_cube, i.unit_type
             FROM meals m
             JOIN meal_ingredients mi ON mi.meal_id = m.id
             JOIN ingredients i ON i.id = mi.ingredient_id
@@ -338,8 +338,10 @@ def create_app(config=None):
             meals_map[mid]['ingredients'].append(
                 {'ingredient_id': r['ingredient_id'], 'grams': r['grams']}
             )
+            # quantity type: grams field is treated as cube count (weight_per_cube=1)
+            wpc = r['weight_per_cube'] if r['unit_type'] == 'weight' else 1
             ing_map[r['ingredient_id']] = {
-                'id': r['ingredient_id'], 'weight_per_cube': r['weight_per_cube']
+                'id': r['ingredient_id'], 'weight_per_cube': wpc
             }
 
         updates, deltas = compute_deductions(
@@ -380,23 +382,34 @@ def create_app(config=None):
     @login_required
     def api_ingredients_add():
         d = request.get_json() or {}
-        required = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes'}
+        unit_type = d.get('unit_type', 'weight')
+        if unit_type not in ('weight', 'quantity'):
+            return jsonify({'error': '유효하지 않은 타입입니다'}), 400
+        required = {'name', 'emoji', 'color', 'created_at', 'total_cubes'}
+        if unit_type == 'weight':
+            required.add('weight_per_cube')
         if not required.issubset(d):
             return jsonify({'error': '필수 항목 누락'}), 400
         try:
-            d['weight_per_cube'] = int(d['weight_per_cube'])
-            d['total_cubes']     = int(d['total_cubes'])
-            if d['weight_per_cube'] <= 0 or d['total_cubes'] <= 0:
+            d['total_cubes'] = int(d['total_cubes'])
+            if d['total_cubes'] <= 0:
                 raise ValueError
+            if unit_type == 'weight':
+                d['weight_per_cube'] = int(d['weight_per_cube'])
+                if d['weight_per_cube'] <= 0:
+                    raise ValueError
+            else:
+                d['weight_per_cube'] = None
         except (ValueError, TypeError):
             return jsonify({'error': '중량/개수는 양의 정수여야 합니다'}), 400
+        d['unit_type'] = unit_type
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute("""
             INSERT INTO ingredients
-              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, user_id)
+              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, unit_type, user_id)
             VALUES (%(name)s, %(emoji)s, %(color)s, %(created_at)s,
-                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(user_id)s)
+                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(unit_type)s, %(user_id)s)
         """, {**d, 'user_id': get_view_user_id()})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
@@ -420,7 +433,7 @@ def create_app(config=None):
         d    = request.get_json()
         conn = _mod.get_db()
         cur  = conn.cursor()
-        UPDATABLE_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes'}
+        UPDATABLE_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes', 'unit_type'}
         d = {k: v for k, v in d.items() if k in UPDATABLE_FIELDS}
         if not d:
             return jsonify({'error': 'no valid fields'}), 400
