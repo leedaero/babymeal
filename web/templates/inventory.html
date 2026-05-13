@@ -25,7 +25,15 @@
     <template x-for="ing in ingredients" :key="ing.id">
       <div class="cube-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-          <div class="cube-icon" :style="`background-color:${ing.color}22`" x-text="ing.emoji"></div>
+          <div class="cube-icon" :style="`background-color:${ing.color}22`">
+            <template x-if="ing.image_url">
+              <img :src="ing.image_url" width="40" height="40"
+                   style="object-fit:contain;display:block;" alt="">
+            </template>
+            <template x-if="!ing.image_url">
+              <span x-text="ing.emoji"></span>
+            </template>
+          </div>
           <div style="display:flex;gap:.25rem;">
             <button class="btn btn-sm btn-muted" @click="openEdit(ing)" style="padding:.2rem .5rem;">✏️</button>
             <button class="btn btn-sm btn-danger" @click="deleteIngredient(ing)" style="padding:.2rem .5rem;">🗑</button>
