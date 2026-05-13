@@ -115,6 +115,7 @@ const EMOJI_DATA = [
     {e:'🌽',n:'옥수수 corn'},
     {e:'🍠',n:'고구마 sweet potato'},
     {e:'🥔',n:'감자 potato'},
+    {e:'🎃',n:'호박 단호박 애호박 늙은호박 pumpkin squash'},
     {e:'🥬',n:'청경채 시금치 상추 채소 leafy green'},
     {e:'🫜',n:'무 무우 radish daikon 뿌리채소 turnip beet root vegetable'},
     {e:'🥗',n:'샐러드 salad'},
