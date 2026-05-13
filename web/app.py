@@ -62,7 +62,7 @@ def create_app(config=None):
     _mod.get_db = _get_db
 
     def get_view_user_id():
-        return session.get('view_as_user_id', session['user_id'])
+        return session.get('view_as_user_id') or session.get('user_id')
 
     # ─── 보안 헤더 ───────────────────────────────────────────
 
