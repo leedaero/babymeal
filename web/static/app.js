@@ -60,6 +60,14 @@ function inventoryPage() {
         openEdit(ing) { this.editTarget = { ...ing }; this.showAddModal = true; },
         openAdd()     { this.editTarget = null;        this.showAddModal = true; },
 
+        async deleteIngredient(ing) {
+            if (!confirm(`"${ing.name}" 재료를 삭제할까요?\n관련된 식단 기록에서도 제거됩니다.`)) return;
+            const res = await api(`/api/ingredients/${ing.id}`, { method: 'DELETE' });
+            if (res && res.ok) {
+                this.ingredients = this.ingredients.filter(i => i.id !== ing.id);
+            }
+        },
+
         async onSaved() {
             this.showAddModal = false;
             this.editTarget = null;
