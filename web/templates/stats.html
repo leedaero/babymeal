@@ -25,14 +25,12 @@
 
   <div class="chart-wrap">
     <p class="chart-title">재료별 재고 현황</p>
-    <template x-if="ingredients.length === 0">
-      <p style="text-align:center;color:var(--text-muted);padding:2rem 0;">등록된 재료가 없습니다.</p>
-    </template>
-    <template x-if="ingredients.length > 0">
-      <div :style="`height:${Math.max(ingredients.length * 46, 120)}px`">
-        <canvas id="stockChart"></canvas>
-      </div>
-    </template>
+    <p x-show="ingredients.length === 0"
+       style="text-align:center;color:var(--text-muted);padding:2rem 0;">등록된 재료가 없습니다.</p>
+    <div x-show="ingredients.length > 0"
+         :style="`height:${Math.max(ingredients.length * 46, 120)}px`">
+      <canvas id="stockChart"></canvas>
+    </div>
   </div>
 
 </div>

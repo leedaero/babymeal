@@ -271,7 +271,6 @@ function statsPage() {
 
         async init() {
             this.ingredients = await api('/api/ingredients') || [];
-            await this.$nextTick();
             this._renderChart();
         },
 
