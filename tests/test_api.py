@@ -33,6 +33,9 @@ def authed_client(app):
     with client.session_transaction() as sess:
         sess['logged_in'] = True
         sess['username'] = 'admin'
+        sess['user_id'] = 1
+        sess['view_as_user_id'] = 1
+        sess['is_admin'] = True
         sess['csrf_token'] = 'testtoken'
     return client
 
@@ -119,3 +122,50 @@ def test_api_emoji_image_not_found(authed_client):
          patch('web.app.minio_storage.get_bytes', return_value=(None, None)):
         resp = authed_client.get('/api/emoji/unknown')
     assert resp.status_code == 404
+
+
+@pytest.fixture
+def non_admin_client(app):
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess['logged_in'] = True
+        sess['username'] = 'user1'
+        sess['user_id'] = 2
+        sess['view_as_user_id'] = 2
+        sess['is_admin'] = False
+        sess['csrf_token'] = 'testtoken'
+    return client
+
+
+def test_switch_user_requires_admin(non_admin_client):
+    resp = non_admin_client.post(
+        '/api/admin/switch-user',
+        data=json.dumps({'user_id': 1}),
+        content_type='application/json',
+        headers={'X-CSRF-Token': 'testtoken'},
+    )
+    assert resp.status_code in (302, 403)
+
+
+def test_switch_user_success(authed_client):
+    target = {'id': 2, 'username': 'user1'}
+    cur = make_cursor([target])
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        resp = authed_client.post(
+            '/api/admin/switch-user',
+            data=json.dumps({'user_id': 2}),
+            content_type='application/json',
+            headers={'X-CSRF-Token': 'testtoken'},
+        )
+    assert resp.status_code == 200
+    assert json.loads(resp.data)['username'] == 'user1'
+
+
+def test_switch_user_reset(authed_client):
+    resp = authed_client.delete(
+        '/api/admin/switch-user',
+        headers={'X-CSRF-Token': 'testtoken'},
+    )
+    assert resp.status_code == 200
+    assert json.loads(resp.data)['ok'] is True

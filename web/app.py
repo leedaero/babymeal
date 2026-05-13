@@ -61,6 +61,9 @@ def create_app(config=None):
 
     _mod.get_db = _get_db
 
+    def get_view_user_id():
+        return session.get('view_as_user_id', session['user_id'])
+
     # ─── 보안 헤더 ───────────────────────────────────────────
 
     @app.after_request
@@ -190,6 +193,7 @@ def create_app(config=None):
             session['username']  = username
             session['user_id']   = user['id']
             session['is_admin']  = bool(user['is_admin'])
+            session['view_as_user_id'] = user['id']
             session.permanent    = True
             _clear_attempts(ip)
             return redirect(url_for('inventory_page'))
@@ -463,6 +467,28 @@ def create_app(config=None):
             resp.headers['Cache-Control'] = 'public, max-age=604800'
             return resp
         return '', 404
+
+    @app.post('/api/admin/switch-user')
+    @admin_required
+    def api_admin_switch_user():
+        d = request.get_json() or {}
+        uid = d.get('user_id')
+        if not uid:
+            return jsonify({'error': 'user_id 필요'}), 400
+        conn = _mod.get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT id, username FROM users WHERE id=%s AND is_active=1', (uid,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({'error': '존재하지 않는 사용자'}), 400
+        session['view_as_user_id'] = user['id']
+        return jsonify({'username': user['username']})
+
+    @app.delete('/api/admin/switch-user')
+    @admin_required
+    def api_admin_switch_user_reset():
+        session['view_as_user_id'] = session['user_id']
+        return jsonify({'ok': True})
 
     # ─── 식단 API ─────────────────────────────────────────
 
