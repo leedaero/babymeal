@@ -497,7 +497,7 @@ function settingsPage() {
         errorMsg: '',
         form: { username: '', password: '', is_admin: false },
 
-        notify: { enabled: false, notify_hour: 8, notify_minute: 0 },
+        notify: { enabled: false, notify_hour: 8, notify_minute: 0, discord_webhook: '' },
         notifySaving: false,
         notifyMsg: '',
         notifyOk: true,

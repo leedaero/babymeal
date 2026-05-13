@@ -61,6 +61,12 @@
                 @click="notify.enabled = !notify.enabled"
                 x-text="notify.enabled ? '🔔 활성' : '🔕 비활성'"></button>
       </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:.3rem;">웹훅 URL</label>
+        <input class="form-input" type="url" x-model="notify.discord_webhook"
+               placeholder="https://discord.com/api/webhooks/..."
+               style="width:100%;font-size:.8rem;">
+      </div>
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
         <label style="font-size:.8rem;color:var(--text-muted);white-space:nowrap;">발송 시간</label>
         <input class="form-input" type="number" min="0" max="23" style="width:5rem;"

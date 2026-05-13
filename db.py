@@ -10,6 +10,13 @@ def load_config(config_path=None):
         return json.load(f)
 
 
+def save_config(data, config_path=None):
+    if config_path is None:
+        config_path = Path(__file__).parent / "config.json"
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 def get_connection(config=None):
     if config is None:
         config = load_config()

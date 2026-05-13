@@ -656,10 +656,12 @@ def create_app(config=None):
     @admin_required
     def api_notification_get():
         row = _get_notification_settings_row()
+        cfg = _db.load_config()
         return jsonify({
-            'enabled':       bool(row['enabled']),
-            'notify_hour':   row['notify_hour'],
-            'notify_minute': row['notify_minute'],
+            'enabled':         bool(row['enabled']),
+            'notify_hour':     row['notify_hour'],
+            'notify_minute':   row['notify_minute'],
+            'discord_webhook': cfg.get('discord_webhook', ''),
         })
 
     @app.post('/api/notification-settings/test')
@@ -692,6 +694,12 @@ def create_app(config=None):
                 raise ValueError
         except (TypeError, ValueError):
             return jsonify({'error': '유효하지 않은 시간입니다'}), 400
+
+        webhook = str(d.get('discord_webhook', '')).strip()
+
+        cfg = _db.load_config()
+        cfg['discord_webhook'] = webhook
+        _db.save_config(cfg)
 
         conn = _db.get_connection()
         try:
