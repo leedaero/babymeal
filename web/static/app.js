@@ -327,7 +327,7 @@ function statsPage() {
     };
 }
 
-// ─── 식단표 ───
+// ─── 식단표 (캘린더) ───
 const MEAL_LABELS = { morning:'아침', lunch:'점심', snack:'간식', dinner:'저녁' };
 const MEAL_ORDER  = ['morning','lunch','snack','dinner'];
 
@@ -335,11 +335,16 @@ function schedulePage() {
     return {
         meals: [],
         ingredients: [],
+        viewDate: new Date(),
+        selectedMeal: null,
         showAddModal: false,
         addDefaultDate: '',
+        _today: new Date(),
 
         async init() {
             await api('/api/deduct', { method: 'POST' });
+            const t = new Date();
+            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
             await this.load();
         },
 
@@ -350,32 +355,76 @@ function schedulePage() {
             ]);
         },
 
-        get groupedMeals() {
-            const g = {};
-            for (const m of this.meals) {
-                if (!g[m.date]) g[m.date] = [];
-                g[m.date].push(m);
-            }
-            for (const d in g) {
-                g[d].sort((a, b) => MEAL_ORDER.indexOf(a.meal_time) - MEAL_ORDER.indexOf(b.meal_time));
-            }
-            return g;
+        get viewYear()  { return this.viewDate.getFullYear(); },
+        get viewMonth() { return this.viewDate.getMonth(); },
+        get viewMonthLabel() { return `${this.viewYear}년 ${this.viewMonth + 1}월`; },
+
+        prevMonth() { this.viewDate = new Date(this.viewYear, this.viewMonth - 1, 1); },
+        nextMonth() { this.viewDate = new Date(this.viewYear, this.viewMonth + 1, 1); },
+        goToday()   {
+            const t = new Date();
+            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
         },
 
-        get sortedDates() { return Object.keys(this.groupedMeals).sort(); },
-
-        dateLabel(dateStr) {
-            const d    = new Date(dateStr + 'T00:00:00');
-            const today = new Date(); today.setHours(0,0,0,0);
-            const diff  = Math.round((d - today) / 86400000);
-            if (diff === 0) return '오늘';
-            if (diff === 1) return '내일';
-            return d.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
+        get calendarDays() {
+            const y = this.viewYear, m = this.viewMonth;
+            const firstDow  = new Date(y, m, 1).getDay();
+            const daysInMon = new Date(y, m + 1, 0).getDate();
+            const prevLast  = new Date(y, m, 0).getDate();
+            const cells = [];
+            for (let i = firstDow - 1; i >= 0; i--)
+                cells.push({ d: new Date(y, m - 1, prevLast - i), other: true });
+            for (let d = 1; d <= daysInMon; d++)
+                cells.push({ d: new Date(y, m, d), other: false });
+            while (cells.length % 7 !== 0)
+                cells.push({ d: new Date(y, m + 1, cells.length - firstDow - daysInMon + 1), other: true });
+            return cells;
         },
 
-        isPast(dateStr) { return new Date(dateStr + 'T23:59:59') < new Date(); },
+        _dateStr(date) {
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+        },
 
-        mealLabel(t) { return MEAL_LABELS[t] || t; },
+        mealsForDate(date) {
+            const ds = this._dateStr(date);
+            return this.meals
+                .filter(m => m.date === ds)
+                .sort((a, b) => MEAL_ORDER.indexOf(a.meal_time) - MEAL_ORDER.indexOf(b.meal_time));
+        },
+
+        isToday(date) {
+            const t = this._today;
+            return date.getFullYear() === t.getFullYear() &&
+                   date.getMonth()    === t.getMonth()    &&
+                   date.getDate()     === t.getDate();
+        },
+
+        openDetail(meal)  { this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] }; },
+        closeDetail()     { this.selectedMeal = null; },
+
+        openAddMeal(date) {
+            this.addDefaultDate = date || this._dateStr(new Date());
+            this.showAddModal = true;
+        },
+
+        async changeStatus(meal, status) {
+            const updated = await api(`/api/meals/${meal.id}/status`,
+                { method: 'POST', body: { status } });
+            if (updated) {
+                const idx = this.meals.findIndex(m => m.id === meal.id);
+                if (idx !== -1) this.meals[idx] = updated;
+                this.selectedMeal = { ...updated, ingredients: updated.ingredients || [] };
+                this.ingredients  = await api('/api/ingredients') || [];
+            }
+        },
+
+        async deleteMeal(meal) {
+            if (!confirm(`${meal.date} ${MEAL_LABELS[meal.meal_time]} 식단을 삭제할까요?`)) return;
+            const res = await api(`/api/meals/${meal.id}`, { method: 'DELETE' });
+            if (res?.ok) { await this.load(); this.selectedMeal = null; }
+        },
+
+        async onMealSaved() { this.showAddModal = false; await this.load(); },
 
         statusBadge(s) {
             return {
@@ -386,28 +435,16 @@ function schedulePage() {
             }[s] || { cls:'badge-muted', text:s };
         },
 
-        async setStatus(meal, newStatus) {
-            const updated = await api(`/api/meals/${meal.id}/status`,
-                { method:'POST', body:{ status: newStatus } });
-            if (updated) {
-                const idx = this.meals.findIndex(m => m.id === meal.id);
-                if (idx !== -1) this.meals[idx] = updated;
-                this.ingredients = await api('/api/ingredients') || [];
-            }
+        chipColor(status) {
+            return { upcoming:'#3498db', confirmed:'#27ae60',
+                     skipped:'#95a5a6', 'auto-consumed':'#95a5a6' }[status] || '#888';
         },
 
-        openAddMeal(date = '') {
-            this.addDefaultDate = date || new Date().toISOString().split('T')[0];
-            this.showAddModal = true;
+        detailDateLabel(ds) {
+            if (!ds) return '';
+            return new Date(ds + 'T00:00:00').toLocaleDateString('ko-KR',
+                { year:'numeric', month:'long', day:'numeric', weekday:'long' });
         },
-
-        async deleteMeal(meal) {
-            if (!confirm(`${this.dateLabel(meal.date)} ${this.mealLabel(meal.meal_time)} 식단을 삭제할까요?`)) return;
-            await api(`/api/meals/${meal.id}`, { method: 'DELETE' });
-            await this.load();
-        },
-
-        async onMealSaved() { this.showAddModal = false; await this.load(); },
     };
 }
 

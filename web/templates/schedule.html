@@ -7,52 +7,83 @@
      @meal-saved="onMealSaved()"
      @close-modal="showAddModal=false">
 
-  <template x-if="sortedDates.length === 0">
-    <div class="empty-state">
-      <div class="empty-state-icon">🍱</div>
-      <p class="empty-state-text">아직 등록된 식단이 없어요</p>
+  <!-- 월 네비게이션 -->
+  <div class="cal-header">
+    <button class="btn btn-sm btn-muted" @click="prevMonth()">◀</button>
+    <span class="cal-month-label" x-text="viewMonthLabel"></span>
+    <button class="btn btn-sm btn-muted" @click="nextMonth()">▶</button>
+    <button class="btn btn-sm btn-blue" @click="goToday()" style="margin-left:.25rem;">오늘</button>
+  </div>
+
+  <!-- 캘린더 -->
+  <div class="cal-wrap">
+    <div class="cal-weekdays">
+      <span style="color:#e74c3c">일</span>
+      <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span>
+      <span style="color:#3498db">토</span>
     </div>
-  </template>
-
-  <template x-for="date in sortedDates" :key="date">
-    <div class="date-group">
-      <div class="date-label">
-        <span class="date-label-text" :class="isPast(date)?'past':''" x-text="dateLabel(date)"></span>
-        <button class="btn btn-sm btn-blue" @click="openAddMeal(date)">+ 끼니 추가</button>
-      </div>
-
-      <template x-for="meal in groupedMeals[date]" :key="meal.id">
-        <div class="meal-row" :class="meal.status==='skipped'?'skipped':''">
-          <div class="meal-row-header">
-            <span class="meal-time-label" x-text="mealLabel(meal.meal_time)"></span>
-            <span class="badge" :class="statusBadge(meal.status).cls"
-                  x-text="statusBadge(meal.status).text"></span>
+    <div class="cal-grid">
+      <template x-for="cell in calendarDays" :key="cell.d.getTime()">
+        <div class="cal-cell" :class="{ 'cal-today': isToday(cell.d), 'cal-other': cell.other }">
+          <div class="cal-cell-head">
+            <span class="cal-date-num" x-text="cell.d.getDate()"></span>
+            <button class="cal-add-btn" @click.stop="openAddMeal(_dateStr(cell.d))" title="식단 추가">+</button>
           </div>
-          <div class="meal-ingredients">
-            <template x-for="mi in meal.ingredients" :key="mi.ingredient_id">
-              <span class="meal-ing-chip" x-text="`${mi.emoji} ${mi.name} ${mi.grams}g`"></span>
-            </template>
-          </div>
-          <div class="meal-actions">
-            <template x-if="meal.status==='upcoming'||meal.status==='skipped'">
-              <button class="btn btn-sm btn-green" @click="setStatus(meal,'confirmed')">✅ 먹었어요</button>
-            </template>
-            <template x-if="meal.status==='auto-consumed'||meal.status==='confirmed'">
-              <button class="btn btn-sm btn-muted" @click="setStatus(meal,'skipped')">↩ 안 먹었어요</button>
-            </template>
-            <button class="btn btn-sm btn-danger" @click="deleteMeal(meal)">🗑</button>
-          </div>
+          <template x-for="meal in mealsForDate(cell.d)" :key="meal.id">
+            <div class="cal-chip"
+                 :style="`background:${chipColor(meal.status)}22;border-left:3px solid ${chipColor(meal.status)}`"
+                 @click="openDetail(meal)">
+              <span x-text="MEAL_LABELS[meal.meal_time]"></span>
+            </div>
+          </template>
         </div>
       </template>
     </div>
+  </div>
+
+  <!-- 식단 상세 모달 -->
+  <template x-if="selectedMeal">
+    <div class="modal-overlay" @click.self="closeDetail()">
+      <div class="modal-box">
+        <p class="modal-title" x-text="detailDateLabel(selectedMeal.date)"></p>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;">
+          <span class="meal-time-label" x-text="MEAL_LABELS[selectedMeal.meal_time]"></span>
+          <span class="badge" :class="statusBadge(selectedMeal.status).cls"
+                x-text="statusBadge(selectedMeal.status).text"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">재료</label>
+          <template x-if="!selectedMeal.ingredients || selectedMeal.ingredients.length === 0">
+            <p style="font-size:.8rem;color:var(--text-muted);padding:.25rem 0;">재료 없음</p>
+          </template>
+          <template x-for="mi in (selectedMeal.ingredients || [])" :key="mi.ingredient_id">
+            <div class="ing-row">
+              <span class="ing-row-emoji" x-text="mi.emoji"></span>
+              <span class="ing-row-name"  x-text="mi.name"></span>
+              <span style="font-size:.82rem;color:var(--text-muted);" x-text="`${mi.grams}g`"></span>
+            </div>
+          </template>
+        </div>
+
+        <div class="form-actions" style="flex-wrap:wrap;gap:.4rem;">
+          <template x-if="selectedMeal.status==='upcoming'||selectedMeal.status==='skipped'">
+            <button class="btn btn-sm btn-green" @click="changeStatus(selectedMeal,'confirmed')">✅ 먹었어요</button>
+          </template>
+          <template x-if="selectedMeal.status==='auto-consumed'||selectedMeal.status==='confirmed'">
+            <button class="btn btn-sm btn-muted" @click="changeStatus(selectedMeal,'skipped')">↩ 안 먹었어요</button>
+          </template>
+          <button class="btn btn-sm btn-danger" @click="deleteMeal(selectedMeal)">🗑 삭제</button>
+          <button class="btn btn-sm btn-muted" @click="closeDetail()" style="margin-left:auto;">닫기</button>
+        </div>
+      </div>
+    </div>
   </template>
 
-  <button class="btn-add-date" @click="openAddMeal()">+ 날짜 식단 추가</button>
-
+  <!-- 식단 추가 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">
-      <div class="modal-box"
-           x-data="mealModal(addDefaultDate, ingredients)">
+      <div class="modal-box" x-data="mealModal(addDefaultDate, ingredients)">
         <p class="modal-title">식단 추가</p>
         <div class="form-row">
           <div class="form-group">
