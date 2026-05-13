@@ -202,7 +202,7 @@ function ingredientModal(editTarget) {
             created_at:     editTarget?.created_at     || new Date().toISOString().split('T')[0],
             weight_per_cube: editTarget?.weight_per_cube || 20,
             total_cubes:    editTarget?.total_cubes    || 10,
-            unit_type:      editTarget?.unit_type      || 'weight',
+            unit_type:      editTarget?.unit_type      || 'quantity',
         },
         editId:       editTarget?.id || null,
         presetEmojis: PRESET_EMOJIS,
