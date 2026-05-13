@@ -210,13 +210,13 @@ def create_app(config=None):
     @app.route('/')
     @login_required
     def inventory_page():
-        _run_auto_deduction(_mod.get_db())
+        _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return render_template('inventory.html', **_page_ctx())
 
     @app.route('/schedule')
     @login_required
     def schedule_page():
-        _run_auto_deduction(_mod.get_db())
+        _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return render_template('schedule.html', **_page_ctx())
 
     @app.route('/settings')
@@ -310,7 +310,7 @@ def create_app(config=None):
             ctx['all_users'] = [dict(r) for r in cur.fetchall()]
         return ctx
 
-    def _run_auto_deduction(conn):
+    def _run_auto_deduction(conn, user_id):
         if app.config.get('TESTING'):
             return
         cur = conn.cursor()
@@ -320,8 +320,8 @@ def create_app(config=None):
             FROM meals m
             JOIN meal_ingredients mi ON mi.meal_id = m.id
             JOIN ingredients i ON i.id = mi.ingredient_id
-            WHERE m.status = 'upcoming'
-        """)
+            WHERE m.status = 'upcoming' AND m.user_id = %s
+        """, (user_id,))
         rows = cur.fetchall()
         if not rows:
             return
@@ -357,7 +357,7 @@ def create_app(config=None):
     @app.post('/api/deduct')
     @login_required
     def api_deduct():
-        _run_auto_deduction(_mod.get_db())
+        _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return jsonify({'ok': True})
 
     # ─── 재고 API ─────────────────────────────────────────
@@ -397,7 +397,7 @@ def create_app(config=None):
               (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, user_id)
             VALUES (%(name)s, %(emoji)s, %(color)s, %(created_at)s,
                     %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(user_id)s)
-        """, {**d, 'user_id': session['user_id']})
+        """, {**d, 'user_id': get_view_user_id()})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
         ing = dict(cur.fetchone())
@@ -546,7 +546,7 @@ def create_app(config=None):
         cur  = conn.cursor()
         cur.execute(
             'INSERT INTO meals (date, meal_time, note, user_id) VALUES (%s, %s, %s, %s)',
-            (d['date'], d['meal_time'], d.get('note', ''), session['user_id'])
+            (d['date'], d['meal_time'], d.get('note', ''), get_view_user_id())
         )
         meal_id = cur.lastrowid
         for mi in d.get('ingredients', []):
