@@ -12,5 +12,12 @@
   "discord_webhook": "",
   "web": {
     "trusted_proxies": []
+  },
+  "minio": {
+    "endpoint": "192.168.0.34:9000",
+    "access_key": "YOUR_MINIO_ACCESS_KEY",
+    "secret_key": "YOUR_MINIO_SECRET_KEY",
+    "bucket": "babymeal",
+    "secure": false
   }
 }
