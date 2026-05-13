@@ -356,7 +356,8 @@ def create_app(config=None):
     @login_required
     def api_ingredients_list():
         cur = _mod.get_db().cursor()
-        cur.execute('SELECT * FROM ingredients ORDER BY name')
+        cur.execute('SELECT * FROM ingredients WHERE user_id=%s ORDER BY name',
+                    (get_view_user_id(),))
         return jsonify([_fmt_ingredient(r) for r in cur.fetchall()])
 
     @app.post('/api/ingredients')
@@ -377,10 +378,10 @@ def create_app(config=None):
         cur  = conn.cursor()
         cur.execute("""
             INSERT INTO ingredients
-              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes)
+              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, user_id)
             VALUES (%(name)s, %(emoji)s, %(color)s, %(created_at)s,
-                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s)
-        """, d)
+                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(user_id)s)
+        """, {**d, 'user_id': session['user_id']})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
         ing = dict(cur.fetchone())
@@ -408,7 +409,8 @@ def create_app(config=None):
         if not d:
             return jsonify({'error': 'no valid fields'}), 400
         sets = ', '.join(f'{k}=%({k})s' for k in d)
-        cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s', {**d, 'id': ing_id})
+        cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s AND user_id=%(uid)s',
+                    {**d, 'id': ing_id, 'uid': get_view_user_id()})
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = dict(cur.fetchone())
@@ -430,7 +432,8 @@ def create_app(config=None):
     def api_ingredients_delete(ing_id):
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute('DELETE FROM ingredients WHERE id=%s', (ing_id,))
+        cur.execute('DELETE FROM ingredients WHERE id=%s AND user_id=%s',
+                    (ing_id, get_view_user_id()))
         conn.commit()
         return jsonify({'ok': True})
 
@@ -445,8 +448,8 @@ def create_app(config=None):
         conn  = _mod.get_db()
         cur   = conn.cursor()
         cur.execute(
-            'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
-            (delta, ing_id)
+            'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s AND user_id=%s',
+            (delta, ing_id, get_view_user_id())
         )
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))

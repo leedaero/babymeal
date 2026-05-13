@@ -169,3 +169,17 @@ def test_switch_user_reset(authed_client):
     )
     assert resp.status_code == 200
     assert json.loads(resp.data)['ok'] is True
+
+
+def test_ingredients_list_filtered_by_user(authed_client):
+    rows = [{'id': 1, 'name': '소고기', 'emoji': '🥩', 'color': '#C0392B',
+             'created_at': '2026-05-01', 'weight_per_cube': 20,
+             'total_cubes': 10, 'current_cubes': 10, 'image_url': None,
+             'user_id': 1}]
+    cur = make_cursor(rows)
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        resp = authed_client.get('/api/ingredients')
+    assert resp.status_code == 200
+    call_args = cur.execute.call_args_list[0]
+    assert '1' in str(call_args) or 1 in str(call_args)
