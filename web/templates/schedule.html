@@ -27,12 +27,19 @@
       <template x-for="cell in calendarDays" :key="cell.d.getTime()">
         <div class="cal-cell" :class="{ 'cal-today': isToday(cell.d), 'cal-other': cell.other }">
           <span class="cal-date-num" x-text="cell.d.getDate()"></span>
-          <template x-for="mt in ['morning','lunch','snack','dinner']" :key="mt">
+          <template x-for="mt in MEAL_ORDER" :key="mt">
             <div class="cal-slot"
                  :class="mealAt(cell.d, mt) ? 'cal-slot-filled' : 'cal-slot-empty'"
                  :style="mealAt(cell.d, mt) ? `background:${chipColor(mealAt(cell.d,mt).status)}22;border-left:3px solid ${chipColor(mealAt(cell.d,mt).status)}` : ''"
                  @click="clickSlot(cell.d, mt)">
               <span x-text="MEAL_LABELS[mt]"></span>
+            </div>
+          </template>
+          <template x-if="mealAt(cell.d, 'tried')">
+            <div class="cal-slot cal-slot-filled cal-slot-tried"
+                 :style="`background:#8e44ad22;border-left:3px solid #8e44ad`"
+                 @click="clickSlot(cell.d, 'tried')">
+              <span>먹어봤음</span>
             </div>
           </template>
           <template x-if="!cell.other && dayTotalGrams(cell.d) > 0">
@@ -60,7 +67,10 @@
             <p style="font-size:.8rem;color:var(--text-muted);padding:.25rem 0;">재료 없음</p>
           </template>
           <template x-for="mi in (selectedMeal.ingredients || [])" :key="mi.ingredient_id">
-            <div class="ing-row">
+            <div class="ing-row" style="cursor:pointer;" @click="toggleCheck(mi.ingredient_id)">
+              <input type="checkbox" :checked="isChecked(mi.ingredient_id)"
+                     style="width:16px;height:16px;cursor:pointer;flex-shrink:0;"
+                     @click.stop="toggleCheck(mi.ingredient_id)">
               <span class="ing-row-emoji" x-text="mi.emoji"></span>
               <span class="ing-row-name"  x-text="mi.name"></span>
               <span style="font-size:.82rem;color:var(--text-muted);"
@@ -71,7 +81,10 @@
           </template>
           <template x-if="mealTotalGrams(selectedMeal) > 0">
             <div class="meal-total-row">
-              총 <strong x-text="mealTotalGrams(selectedMeal) + 'g'"></strong>
+              <template x-if="anyChecked">
+                <span>체크 <strong x-text="checkedMealGrams + 'g'"></strong> / </span>
+              </template>
+              전체 <strong x-text="mealTotalGrams(selectedMeal) + 'g'"></strong>
             </div>
           </template>
         </div>

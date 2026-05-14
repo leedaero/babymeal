@@ -55,7 +55,8 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
         <div>
           <p style="font-size:.875rem;font-weight:600;">재고 부족 알림</p>
-          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">큐브 3개 이하 재료를 매일 지정 시간에 디스코드로 전송</p>
+          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">
+          큐브 <span x-text="notify.notify_threshold"></span>개 이하 재료를 매일 지정 시간에 디스코드로 전송</p>
         </div>
         <button class="btn btn-sm" :class="notify.enabled ? 'btn-green' : 'btn-muted'"
                 @click="notify.enabled = !notify.enabled"
@@ -75,6 +76,12 @@
         <input class="form-input" type="number" min="0" max="59" style="width:5rem;"
                x-model.number="notify.notify_minute" placeholder="분">
         <span style="font-size:.75rem;color:var(--text-muted);">매일</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);white-space:nowrap;">알람 기준</label>
+        <input class="form-input" type="number" min="1" max="99" style="width:5rem;"
+               x-model.number="notify.notify_threshold">
+        <span style="font-size:.75rem;color:var(--text-muted);">개 이하일 때 알림</span>
       </div>
       <div style="display:flex;align-items:center;gap:.75rem;">
         <button class="btn btn-blue btn-sm" @click="saveNotify()" :disabled="notifySaving">

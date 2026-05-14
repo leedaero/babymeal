@@ -34,7 +34,6 @@ function inventoryPage() {
         editTarget: null,
 
         async init() {
-            await api('/api/deduct', { method: 'POST' });
             await this.load();
         },
 
@@ -196,13 +195,13 @@ async function loadEmojibaseData() {
 function ingredientModal(editTarget) {
     return {
         form: {
-            name:           editTarget?.name           || '',
-            emoji:          editTarget?.emoji          || '🥩',
-            color:          editTarget?.color          || '#C0392B',
-            created_at:     editTarget?.created_at     || new Date().toISOString().split('T')[0],
+            name:            editTarget?.name           || '',
+            emoji:           editTarget?.emoji          || '🥩',
+            color:           editTarget?.color          || '#C0392B',
+            created_at:      editTarget?.created_at     || new Date().toISOString().split('T')[0],
             weight_per_cube: editTarget?.weight_per_cube || 20,
-            total_cubes:    editTarget?.total_cubes    || 10,
-            unit_type:      editTarget?.unit_type      || 'quantity',
+            total_cubes:     editTarget?.total_cubes    || 10,
+            unit_type:       editTarget?.unit_type      || 'weight',
         },
         editId:       editTarget?.id || null,
         presetEmojis: PRESET_EMOJIS,
@@ -328,8 +327,8 @@ function statsPage() {
 }
 
 // ─── 식단표 (캘린더) ───
-const MEAL_LABELS = { morning:'아침', lunch:'점심', snack:'간식', dinner:'저녁' };
-const MEAL_ORDER  = ['morning','lunch','snack','dinner'];
+const MEAL_LABELS = { morning:'아침', morning_snack:'오전간식', lunch:'점심', snack:'오후간식', dinner:'저녁', tried:'먹어봤음' };
+const MEAL_ORDER  = ['morning','morning_snack','lunch','snack','dinner'];
 
 function schedulePage() {
     return {
@@ -343,9 +342,9 @@ function schedulePage() {
         addDefaultDate: '',
         addDefaultMealTime: 'morning',
         _today: new Date(),
+        checkedIngredients: {},
 
         async init() {
-            await api('/api/deduct', { method: 'POST' });
             const t = new Date();
             this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
             await this.load();
@@ -411,8 +410,25 @@ function schedulePage() {
                    date.getDate()     === t.getDate();
         },
 
-        openDetail(meal)  { this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] }; },
-        closeDetail()     { this.selectedMeal = null; },
+        openDetail(meal)  {
+            this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] };
+            this.checkedIngredients = {};
+        },
+        closeDetail()     { this.selectedMeal = null; this.checkedIngredients = {}; },
+
+        toggleCheck(id)   { this.checkedIngredients[id] = !this.checkedIngredients[id]; },
+        isChecked(id)     { return !!this.checkedIngredients[id]; },
+
+        get anyChecked() {
+            return Object.values(this.checkedIngredients).some(Boolean);
+        },
+
+        get checkedMealGrams() {
+            if (!this.selectedMeal) return 0;
+            return (this.selectedMeal.ingredients || [])
+                .filter(mi => mi.unit_type !== 'quantity' && this.checkedIngredients[mi.ingredient_id])
+                .reduce((sum, mi) => sum + mi.grams, 0);
+        },
 
         openEditMeal(meal) {
             this.editMealData = { ...meal, ingredients: meal.ingredients || [] };
@@ -495,10 +511,12 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
         mealTime: defaultMealTime || 'morning',
         cubes:    {},
         mealTimes: [
-            { value:'morning', label:'아침' },
-            { value:'lunch',   label:'점심' },
-            { value:'snack',   label:'간식' },
-            { value:'dinner',  label:'저녁' },
+            { value:'morning',       label:'아침' },
+            { value:'morning_snack', label:'오전간식' },
+            { value:'lunch',         label:'점심' },
+            { value:'snack',         label:'오후간식' },
+            { value:'dinner',        label:'저녁' },
+            { value:'tried',         label:'먹어봤음' },
         ],
         ingredients,
 
@@ -538,10 +556,12 @@ function editMealModal(meal, ingredients) {
         mealTime: meal.meal_time,
         cubes:    { ...initCubes },
         mealTimes: [
-            { value:'morning', label:'아침' },
-            { value:'lunch',   label:'점심' },
-            { value:'snack',   label:'간식' },
-            { value:'dinner',  label:'저녁' },
+            { value:'morning',       label:'아침' },
+            { value:'morning_snack', label:'오전간식' },
+            { value:'lunch',         label:'점심' },
+            { value:'snack',         label:'오후간식' },
+            { value:'dinner',        label:'저녁' },
+            { value:'tried',         label:'먹어봤음' },
         ],
         ingredients,
 
@@ -575,7 +595,7 @@ function settingsPage() {
         errorMsg: '',
         form: { username: '', password: '', is_admin: false },
 
-        notify: { enabled: false, notify_hour: 8, notify_minute: 0, discord_webhook: '' },
+        notify: { enabled: false, notify_hour: 8, notify_minute: 0, notify_threshold: 3, discord_webhook: '' },
         notifySaving: false,
         notifyMsg: '',
         notifyOk: true,

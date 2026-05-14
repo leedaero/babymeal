@@ -29,7 +29,7 @@ def get_db():
 
 
 _VALID_STATUSES  = {'upcoming', 'confirmed', 'skipped', 'auto-consumed'}
-_VALID_MEAL_TIMES = {'morning', 'lunch', 'snack', 'dinner'}
+_VALID_MEAL_TIMES = {'morning', 'lunch', 'snack', 'dinner', 'morning_snack', 'tried'}
 
 
 def create_app(config=None):
@@ -210,13 +210,11 @@ def create_app(config=None):
     @app.route('/')
     @login_required
     def inventory_page():
-        _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return render_template('inventory.html', **_page_ctx())
 
     @app.route('/schedule')
     @login_required
     def schedule_page():
-        _run_auto_deduction(_mod.get_db(), get_view_user_id())
         return render_template('schedule.html', **_page_ctx())
 
     @app.route('/stats')
@@ -668,19 +666,25 @@ def create_app(config=None):
                 id TINYINT PRIMARY KEY DEFAULT 1,
                 enabled TINYINT(1) NOT NULL DEFAULT 0,
                 notify_hour TINYINT NOT NULL DEFAULT 8,
-                notify_minute TINYINT NOT NULL DEFAULT 0
+                notify_minute TINYINT NOT NULL DEFAULT 0,
+                notify_threshold TINYINT NOT NULL DEFAULT 3
             )
         """)
         cur.execute("INSERT IGNORE INTO notification_settings (id) VALUES (1)")
         conn.commit()
+        try:
+            cur.execute("ALTER TABLE notification_settings ADD COLUMN notify_threshold TINYINT NOT NULL DEFAULT 3")
+            conn.commit()
+        except Exception:
+            pass
 
     def _get_notification_settings_row():
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
-            cur.execute("SELECT enabled, notify_hour, notify_minute FROM notification_settings WHERE id=1")
-            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0}
+            cur.execute("SELECT enabled, notify_hour, notify_minute, notify_threshold FROM notification_settings WHERE id=1")
+            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0, 'notify_threshold': 3}
         finally:
             conn.close()
 
@@ -690,10 +694,11 @@ def create_app(config=None):
         row = _get_notification_settings_row()
         cfg = _db.load_config()
         return jsonify({
-            'enabled':         bool(row['enabled']),
-            'notify_hour':     row['notify_hour'],
-            'notify_minute':   row['notify_minute'],
-            'discord_webhook': cfg.get('discord_webhook', ''),
+            'enabled':          bool(row['enabled']),
+            'notify_hour':      row['notify_hour'],
+            'notify_minute':    row['notify_minute'],
+            'notify_threshold': row.get('notify_threshold', 3),
+            'discord_webhook':  cfg.get('discord_webhook', ''),
         })
 
     @app.post('/api/notification-settings/test')
@@ -730,9 +735,14 @@ def create_app(config=None):
             return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
         conn = _db.get_connection()
         try:
+            _ensure_notification_table(conn)
             cur = conn.cursor()
+            cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+            trow = cur.fetchone()
+            threshold = trow['notify_threshold'] if trow else 3
             cur.execute(
-                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= 3 ORDER BY current_cubes"
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
+                (threshold,)
             )
             items = cur.fetchall()
         finally:
@@ -741,7 +751,7 @@ def create_app(config=None):
             return jsonify({'ok': True, 'sent': False, 'message': '재고 부족 항목이 없습니다'})
         lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
         for item in items:
-            bar = "▓" * item['current_cubes'] + "░" * (3 - item['current_cubes'])
+            bar = "▓" * item['current_cubes'] + "░" * (threshold - item['current_cubes'])
             lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
         lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
         try:
@@ -767,13 +777,14 @@ def create_app(config=None):
     def api_notification_put():
         d = request.get_json() or {}
         try:
-            enabled = bool(d.get('enabled', False))
-            hour    = int(d.get('notify_hour', 8))
-            minute  = int(d.get('notify_minute', 0))
-            if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            enabled   = bool(d.get('enabled', False))
+            hour      = int(d.get('notify_hour', 8))
+            minute    = int(d.get('notify_minute', 0))
+            threshold = int(d.get('notify_threshold', 3))
+            if not (0 <= hour <= 23 and 0 <= minute <= 59 and 1 <= threshold <= 99):
                 raise ValueError
         except (TypeError, ValueError):
-            return jsonify({'error': '유효하지 않은 시간입니다'}), 400
+            return jsonify({'error': '유효하지 않은 값입니다'}), 400
 
         webhook = str(d.get('discord_webhook', '')).strip()
 
@@ -786,15 +797,15 @@ def create_app(config=None):
             _ensure_notification_table(conn)
             cur = conn.cursor()
             cur.execute(
-                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s WHERE id=1",
-                (int(enabled), hour, minute),
+                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s, notify_threshold=%s WHERE id=1",
+                (int(enabled), hour, minute, threshold),
             )
             conn.commit()
         finally:
             conn.close()
 
         _reschedule_notification(enabled, hour, minute)
-        return jsonify({'ok': True, 'enabled': enabled, 'notify_hour': hour, 'notify_minute': minute})
+        return jsonify({'ok': True, 'enabled': enabled, 'notify_hour': hour, 'notify_minute': minute, 'notify_threshold': threshold})
 
     # ─── APScheduler ─────────────────────────────────────────
 
@@ -807,9 +818,14 @@ def create_app(config=None):
             return
         conn = _db.get_connection()
         try:
+            _ensure_notification_table(conn)
             cur = conn.cursor()
+            cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+            trow = cur.fetchone()
+            threshold = trow['notify_threshold'] if trow else 3
             cur.execute(
-                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= 3 ORDER BY current_cubes"
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
+                (threshold,)
             )
             items = cur.fetchall()
         finally:
@@ -821,7 +837,7 @@ def create_app(config=None):
 
         lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
         for item in items:
-            bar = "▓" * item['current_cubes'] + "░" * (3 - item['current_cubes'])
+            bar = "▓" * item['current_cubes'] + "░" * max(0, threshold - item['current_cubes'])
             lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
         lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
         message = "\n".join(lines)

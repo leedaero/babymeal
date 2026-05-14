@@ -57,12 +57,16 @@
                 x-text="ing.current_cubes + (ing.current_cubes <= 3 ? ' 🚨' : '')"></span>
           <button class="adj-btn" @click="adjust(ing.id, +1)">+</button>
         </div>
+        <template x-if="ing.unit_type !== 'quantity' && ing.weight_per_cube">
+          <p class="cube-remaining-grams"
+             x-text="`남은 ${ing.current_cubes * ing.weight_per_cube}g`"></p>
+        </template>
       </div>
     </template>
 
     <button class="cube-add-btn" @click="openAdd()">
       <span style="font-size:1.75rem;">+</span>
-      <span>재료 추가</span>
+      <span>큐브 추가</span>
     </button>
   </div>
 
@@ -115,28 +119,15 @@
             </template>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">큐브 타입</label>
-          <div style="display:flex;gap:.5rem;">
-            <button type="button"
-                    :class="form.unit_type==='weight'?'btn btn-sm btn-green':'btn btn-sm btn-muted'"
-                    @click="form.unit_type='weight'">중량 (g)</button>
-            <button type="button"
-                    :class="form.unit_type==='quantity'?'btn btn-sm btn-green':'btn btn-sm btn-muted'"
-                    @click="form.unit_type='quantity'">수량 (개)</button>
-          </div>
-        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">제작일</label>
             <input class="form-input" type="date" x-model="form.created_at" required>
           </div>
-          <template x-if="form.unit_type === 'weight'">
-            <div class="form-group">
-              <label class="form-label">1큐브 중량 (g)</label>
-              <input class="form-input" type="number" x-model.number="form.weight_per_cube" min="1" required>
-            </div>
-          </template>
+          <div class="form-group">
+            <label class="form-label">1큐브 중량 (g)</label>
+            <input class="form-input" type="number" x-model.number="form.weight_per_cube" min="1" required>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">총 제작 개수</label>
