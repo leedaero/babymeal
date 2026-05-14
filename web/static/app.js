@@ -338,6 +338,8 @@ function schedulePage() {
         viewDate: new Date(),
         selectedMeal: null,
         showAddModal: false,
+        showEditModal: false,
+        editMealData: null,
         addDefaultDate: '',
         addDefaultMealTime: 'morning',
         _today: new Date(),
@@ -412,6 +414,18 @@ function schedulePage() {
         openDetail(meal)  { this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] }; },
         closeDetail()     { this.selectedMeal = null; },
 
+        openEditMeal(meal) {
+            this.editMealData = { ...meal, ingredients: meal.ingredients || [] };
+            this.showEditModal = true;
+        },
+
+        async onMealEdited() {
+            this.showEditModal = false;
+            this.editMealData = null;
+            this.selectedMeal = null;
+            await this.load();
+        },
+
         openAddMeal(date, mealTime = 'morning') {
             this.addDefaultDate     = date || this._dateStr(new Date());
             this.addDefaultMealTime = mealTime;
@@ -485,6 +499,39 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
                 body:{ date: this.date, meal_time: this.mealTime, ingredients: items }
             });
             this.$dispatch('meal-saved');
+        },
+    };
+}
+
+// ─── 식단 수정 모달 ───
+function editMealModal(meal, ingredients) {
+    const initGrams = {};
+    for (const mi of (meal.ingredients || [])) initGrams[mi.ingredient_id] = mi.grams;
+    return {
+        mealId:   meal.id,
+        date:     meal.date,
+        mealTime: meal.meal_time,
+        grams:    { ...initGrams },
+        mealTimes: [
+            { value:'morning', label:'아침' },
+            { value:'lunch',   label:'점심' },
+            { value:'snack',   label:'간식' },
+            { value:'dinner',  label:'저녁' },
+        ],
+        ingredients,
+
+        get hasIngredients() { return Object.values(this.grams).some(g => g > 0); },
+
+        async submit() {
+            const items = Object.entries(this.grams)
+                .filter(([, g]) => g > 0)
+                .map(([id, grams]) => ({ ingredient_id: parseInt(id), grams }));
+            if (!items.length) return;
+            await api(`/api/meals/${this.mealId}`, {
+                method: 'PUT',
+                body: { date: this.date, meal_time: this.mealTime, ingredients: items },
+            });
+            this.$dispatch('meal-edited');
         },
     };
 }

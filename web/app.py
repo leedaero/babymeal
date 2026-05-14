@@ -575,6 +575,38 @@ def create_app(config=None):
         conn.commit()
         return jsonify(_meal_with_ingredients(conn, meal_id)), 201
 
+    @app.put('/api/meals/<int:meal_id>')
+    @login_required
+    def api_meals_update(meal_id):
+        d = request.get_json() or {}
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('SELECT id FROM meals WHERE id=%s AND user_id=%s',
+                    (meal_id, get_view_user_id()))
+        if not cur.fetchone():
+            return jsonify({'error': 'not found'}), 404
+        if d.get('meal_time') and d['meal_time'] not in _VALID_MEAL_TIMES:
+            return jsonify({'error': '유효하지 않은 끼니입니다'}), 400
+        fields, params = [], []
+        if d.get('date'):
+            fields.append('date=%s'); params.append(d['date'])
+        if d.get('meal_time'):
+            fields.append('meal_time=%s'); params.append(d['meal_time'])
+        if 'note' in d:
+            fields.append('note=%s'); params.append(d['note'])
+        if fields:
+            params += [meal_id, get_view_user_id()]
+            cur.execute(f"UPDATE meals SET {', '.join(fields)} WHERE id=%s AND user_id=%s", params)
+        if 'ingredients' in d:
+            cur.execute('DELETE FROM meal_ingredients WHERE meal_id=%s', (meal_id,))
+            for mi in d['ingredients']:
+                cur.execute(
+                    'INSERT INTO meal_ingredients (meal_id, ingredient_id, grams) VALUES (%s, %s, %s)',
+                    (meal_id, mi['ingredient_id'], mi['grams'])
+                )
+        conn.commit()
+        return jsonify(_meal_with_ingredients(conn, meal_id))
+
     @app.delete('/api/meals/<int:meal_id>')
     @login_required
     def api_meals_delete(meal_id):
