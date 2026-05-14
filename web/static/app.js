@@ -532,6 +532,19 @@ function settingsPage() {
             setTimeout(() => this.notifyMsg = '', 4000);
         },
 
+        async runNotify() {
+            this.notifyMsg = '';
+            const r = await api('/api/notification-settings/run', { method: 'POST' });
+            if (r?.ok) {
+                this.notifyOk = true;
+                this.notifyMsg = r.sent ? `발송 완료 (${r.count}개 항목) 📨` : '재고 부족 항목 없음 ✅';
+            } else {
+                this.notifyOk = false;
+                this.notifyMsg = r?.error || '실행 실패';
+            }
+            setTimeout(() => this.notifyMsg = '', 4000);
+        },
+
         closeModal() {
             this.showAddModal = false;
             this.form = { username: '', password: '', is_admin: false };

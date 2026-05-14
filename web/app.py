@@ -682,6 +682,40 @@ def create_app(config=None):
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
 
+    @app.post('/api/notification-settings/run')
+    @admin_required
+    def api_notification_run():
+        cfg = _db.load_config()
+        webhook = cfg.get('discord_webhook', '').strip()
+        if not webhook:
+            return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
+        conn = _db.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= 3 ORDER BY current_cubes"
+            )
+            items = cur.fetchall()
+        finally:
+            conn.close()
+        if not items:
+            return jsonify({'ok': True, 'sent': False, 'message': '재고 부족 항목이 없습니다'})
+        lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
+        for item in items:
+            bar = "▓" * item['current_cubes'] + "░" * (3 - item['current_cubes'])
+            lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
+        lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
+        try:
+            payload = json.dumps({"content": "\n".join(lines)}).encode("utf-8")
+            req = urllib.request.Request(
+                webhook, data=payload,
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            urllib.request.urlopen(req, timeout=10)
+        except Exception as e:
+            return jsonify({'error': f'전송 실패: {e}'}), 500
+        return jsonify({'ok': True, 'sent': True, 'count': len(items)})
+
     @app.put('/api/notification-settings')
     @admin_required
     def api_notification_put():
@@ -719,9 +753,11 @@ def create_app(config=None):
     # ─── APScheduler ─────────────────────────────────────────
 
     def _send_low_stock_notification():
+        logging.info("재고 부족 알림 스케줄 실행")
         cfg = _db.load_config()
         webhook = cfg.get('discord_webhook', '').strip()
         if not webhook:
+            logging.warning("discord_webhook이 설정되지 않아 알림 생략")
             return
         conn = _db.get_connection()
         try:
@@ -734,6 +770,7 @@ def create_app(config=None):
             conn.close()
 
         if not items:
+            logging.info("재고 부족 항목 없음 — 알림 생략")
             return
 
         lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
@@ -750,6 +787,7 @@ def create_app(config=None):
                 headers={"Content-Type": "application/json"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
+            logging.info("Discord 재고 부족 알림 전송 완료 (%d개 항목)", len(items))
         except Exception as e:
             logging.warning("Discord 알림 실패: %s", e)
 
@@ -766,7 +804,7 @@ def create_app(config=None):
                 if enabled:
                     _scheduler.add_job(
                         _send_low_stock_notification,
-                        CronTrigger(hour=hour, minute=minute),
+                        CronTrigger(hour=hour, minute=minute, timezone='Asia/Seoul'),
                         id='low_stock_notify',
                         replace_existing=True,
                     )
