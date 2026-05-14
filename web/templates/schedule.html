@@ -35,6 +35,9 @@
               <span x-text="MEAL_LABELS[mt]"></span>
             </div>
           </template>
+          <template x-if="!cell.other && dayTotalGrams(cell.d) > 0">
+            <span class="cal-day-total" x-text="dayTotalGrams(cell.d) + 'g'"></span>
+          </template>
         </div>
       </template>
     </div>
@@ -64,6 +67,11 @@
                     x-text="mi.unit_type==='quantity'
                       ? `${mi.grams}개`
                       : `${Math.round(mi.grams/mi.weight_per_cube)}큐브 (${mi.grams}g)`"></span>
+            </div>
+          </template>
+          <template x-if="mealTotalGrams(selectedMeal) > 0">
+            <div class="meal-total-row">
+              총 <strong x-text="mealTotalGrams(selectedMeal) + 'g'"></strong>
             </div>
           </template>
         </div>

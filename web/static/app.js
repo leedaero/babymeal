@@ -470,6 +470,21 @@ function schedulePage() {
             return new Date(ds + 'T00:00:00').toLocaleDateString('ko-KR',
                 { year:'numeric', month:'long', day:'numeric', weekday:'long' });
         },
+
+        dayTotalGrams(date) {
+            const ds = this._dateStr(date);
+            return this.meals
+                .filter(m => m.date === ds)
+                .flatMap(m => m.ingredients || [])
+                .filter(mi => mi.unit_type !== 'quantity')
+                .reduce((sum, mi) => sum + mi.grams, 0);
+        },
+
+        mealTotalGrams(meal) {
+            return (meal.ingredients || [])
+                .filter(mi => mi.unit_type !== 'quantity')
+                .reduce((sum, mi) => sum + mi.grams, 0);
+        },
     };
 }
 
