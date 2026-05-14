@@ -441,6 +441,19 @@ function schedulePage() {
             return Object.values(this.checkedIngredients).some(Boolean);
         },
 
+        get allChecked() {
+            if (!this.selectedMeal) return false;
+            const ids = (this.selectedMeal.ingredients || []).map(mi => mi.ingredient_id);
+            return ids.length > 0 && ids.every(id => this.checkedIngredients[id]);
+        },
+
+        toggleAll() {
+            if (!this.selectedMeal) return;
+            const ids = (this.selectedMeal.ingredients || []).map(mi => mi.ingredient_id);
+            const check = !this.allChecked;
+            for (const id of ids) this.checkedIngredients[id] = check;
+        },
+
         get checkedMealGrams() {
             if (!this.selectedMeal) return 0;
             return (this.selectedMeal.ingredients || [])
