@@ -5,7 +5,8 @@
 {% block content %}
 <div x-data="schedulePage()" x-init="init()"
      @meal-saved="onMealSaved()"
-     @close-modal="showAddModal=false">
+     @meal-edited="onMealEdited()"
+     @close-modal="showAddModal=false; showEditModal=false">
 
   <!-- 월 네비게이션 -->
   <div class="cal-header">
@@ -72,8 +73,56 @@
           <template x-if="selectedMeal.status==='auto-consumed'||selectedMeal.status==='confirmed'">
             <button class="btn btn-sm btn-muted" @click="changeStatus(selectedMeal,'skipped')">↩ 안 먹었어요</button>
           </template>
+          <button class="btn btn-sm btn-blue" @click="openEditMeal(selectedMeal)">✏️ 수정</button>
           <button class="btn btn-sm btn-danger" @click="deleteMeal(selectedMeal)">🗑 삭제</button>
           <button class="btn btn-sm btn-muted" @click="closeDetail()" style="margin-left:auto;">닫기</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 식단 수정 모달 -->
+  <template x-if="showEditModal && editMealData">
+    <div class="modal-overlay" @click.self="showEditModal=false">
+      <div class="modal-box" x-data="editMealModal(editMealData, ingredients)">
+        <p class="modal-title">식단 수정</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">날짜</label>
+            <input class="form-input" type="date" x-model="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">끼니</label>
+            <select class="form-input" x-model="mealTime">
+              <template x-for="mt in mealTimes" :key="mt.value">
+                <option :value="mt.value" x-text="mt.label"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">재료 용량</label>
+          <template x-if="ingredients.length===0">
+            <p style="font-size:.8rem;color:var(--text-muted);padding:.5rem 0;">
+              먼저 재고 탭에서 재료를 추가해주세요
+            </p>
+          </template>
+          <template x-for="ing in ingredients" :key="ing.id">
+            <div class="ing-row">
+              <span class="ing-row-emoji" x-text="ing.emoji"></span>
+              <span class="ing-row-name"  x-text="ing.name"></span>
+              <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
+                    x-text="ing.unit_type==='quantity' ? '수량' : '중량'"></span>
+              <input class="ing-row-input" type="number" min="0" placeholder="0"
+                     :value="grams[ing.id]||''"
+                     @input="grams[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : 'g'"></span>
+            </div>
+          </template>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
+          <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">저장하기</button>
         </div>
       </div>
     </div>
