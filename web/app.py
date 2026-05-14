@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, json, argparse, secrets, logging, urllib.request, urllib.error
+import sys, os, json, argparse, secrets, logging, threading, urllib.request, urllib.error
 from datetime import datetime, timedelta
 from pathlib import Path
 from functools import wraps
@@ -556,7 +556,9 @@ def create_app(config=None):
         )
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
-        return jsonify(_fmt_ingredient(cur.fetchone()))
+        ing = _fmt_ingredient(cur.fetchone())
+        threading.Thread(target=_send_realtime_alert, args=(ing,), daemon=True).start()
+        return jsonify(ing)
 
     # ─── 이모지 이미지 API ────────────────────────────────────
 
@@ -879,6 +881,43 @@ def create_app(config=None):
         return jsonify({'ok': True, 'enabled': enabled, 'notify_hour': hour, 'notify_minute': minute, 'notify_threshold': threshold})
 
     # ─── APScheduler ─────────────────────────────────────────
+
+    def _send_realtime_alert(ing):
+        cfg = _db.load_config()
+        webhook = cfg.get('discord_webhook', '').strip()
+        if not webhook:
+            return
+        try:
+            conn = _db.get_connection()
+            try:
+                _ensure_notification_table(conn)
+                cur = conn.cursor()
+                cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+                trow = cur.fetchone()
+                threshold = trow['notify_threshold'] if trow else 3
+            finally:
+                conn.close()
+        except Exception:
+            threshold = 3
+        if ing['current_cubes'] > threshold:
+            return
+        bar = "▓" * ing['current_cubes'] + "░" * max(0, threshold - ing['current_cubes'])
+        message = (
+            f"⚠️ **재고 부족** — 치밀한 이유식\n"
+            f"{ing['emoji']} **{ing['name']}** — {ing['current_cubes']}개 남음  `{bar}`\n"
+            f"> 재고 탭에서 큐브를 보충해주세요 🍼"
+        )
+        try:
+            payload = json.dumps({"content": message}).encode("utf-8")
+            req = urllib.request.Request(
+                webhook, data=payload,
+                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"},
+                method="POST",
+            )
+            urllib.request.urlopen(req, timeout=10)
+            logging.info("Discord 실시간 재고 부족 알림: %s (%d개)", ing['name'], ing['current_cubes'])
+        except Exception as e:
+            logging.warning("Discord 실시간 알림 실패: %s", e)
 
     def _send_low_stock_notification():
         logging.info("재고 부족 알림 스케줄 실행")
