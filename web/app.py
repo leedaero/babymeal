@@ -745,19 +745,23 @@ def create_app(config=None):
         """)
         cur.execute("INSERT IGNORE INTO notification_settings (id) VALUES (1)")
         conn.commit()
-        try:
-            cur.execute("ALTER TABLE notification_settings ADD COLUMN notify_threshold TINYINT NOT NULL DEFAULT 3")
-            conn.commit()
-        except Exception:
-            pass
+        for alter in [
+            "ALTER TABLE notification_settings ADD COLUMN notify_threshold TINYINT NOT NULL DEFAULT 3",
+            "ALTER TABLE notification_settings ADD COLUMN discord_webhook VARCHAR(500) NOT NULL DEFAULT ''",
+        ]:
+            try:
+                cur.execute(alter)
+                conn.commit()
+            except Exception:
+                pass
 
     def _get_notification_settings_row():
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
-            cur.execute("SELECT enabled, notify_hour, notify_minute, notify_threshold FROM notification_settings WHERE id=1")
-            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0, 'notify_threshold': 3}
+            cur.execute("SELECT enabled, notify_hour, notify_minute, notify_threshold, discord_webhook FROM notification_settings WHERE id=1")
+            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0, 'notify_threshold': 3, 'discord_webhook': ''}
         finally:
             conn.close()
 
@@ -765,22 +769,21 @@ def create_app(config=None):
     @admin_required
     def api_notification_get():
         row = _get_notification_settings_row()
-        cfg = _db.load_config()
         return jsonify({
             'enabled':          bool(row['enabled']),
             'notify_hour':      row['notify_hour'],
             'notify_minute':    row['notify_minute'],
             'notify_threshold': row.get('notify_threshold', 3),
-            'discord_webhook':  cfg.get('discord_webhook', ''),
+            'discord_webhook':  row.get('discord_webhook', ''),
         })
 
     @app.post('/api/notification-settings/test')
     @admin_required
     def api_notification_test():
-        cfg = _db.load_config()
-        webhook = cfg.get('discord_webhook', '').strip()
+        row = _get_notification_settings_row()
+        webhook = row.get('discord_webhook', '').strip()
         if not webhook:
-            return jsonify({'error': 'config.json에 discord_webhook이 비어 있습니다'}), 400
+            return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
         try:
             payload = json.dumps({"content": "🍼 **치밀한 이유식** — 디스코드 알림 테스트입니다 ✅"}).encode("utf-8")
             req = urllib.request.Request(
@@ -802,17 +805,23 @@ def create_app(config=None):
     @app.post('/api/notification-settings/run')
     @admin_required
     def api_notification_run():
-        cfg = _db.load_config()
-        webhook = cfg.get('discord_webhook', '').strip()
-        if not webhook:
-            return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
-            cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+            cur.execute("SELECT notify_threshold, discord_webhook FROM notification_settings WHERE id=1")
             trow = cur.fetchone()
             threshold = trow['notify_threshold'] if trow else 3
+            webhook = (trow['discord_webhook'] if trow else '').strip()
+        except Exception:
+            threshold = 3; webhook = ''
+        finally:
+            conn.close()
+        if not webhook:
+            return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
+        conn = _db.get_connection()
+        try:
+            cur = conn.cursor()
             cur.execute(
                 "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
                 (threshold,)
@@ -861,17 +870,13 @@ def create_app(config=None):
 
         webhook = str(d.get('discord_webhook', '')).strip()
 
-        cfg = _db.load_config()
-        cfg['discord_webhook'] = webhook
-        _db.save_config(cfg)
-
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
             cur.execute(
-                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s, notify_threshold=%s WHERE id=1",
-                (int(enabled), hour, minute, threshold),
+                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s, notify_threshold=%s, discord_webhook=%s WHERE id=1",
+                (int(enabled), hour, minute, threshold, webhook),
             )
             conn.commit()
         finally:
@@ -883,22 +888,21 @@ def create_app(config=None):
     # ─── APScheduler ─────────────────────────────────────────
 
     def _send_realtime_alert(ing):
-        cfg = _db.load_config()
-        webhook = cfg.get('discord_webhook', '').strip()
-        if not webhook:
-            return
         try:
             conn = _db.get_connection()
             try:
                 _ensure_notification_table(conn)
                 cur = conn.cursor()
-                cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+                cur.execute("SELECT notify_threshold, discord_webhook FROM notification_settings WHERE id=1")
                 trow = cur.fetchone()
                 threshold = trow['notify_threshold'] if trow else 3
+                webhook = (trow['discord_webhook'] if trow else '').strip()
             finally:
                 conn.close()
         except Exception:
-            threshold = 3
+            threshold = 3; webhook = ''
+        if not webhook:
+            return
         if ing['current_cubes'] > threshold:
             return
         bar = "▓" * ing['current_cubes'] + "░" * max(0, threshold - ing['current_cubes'])
@@ -921,18 +925,14 @@ def create_app(config=None):
 
     def _send_low_stock_notification():
         logging.info("재고 부족 알림 스케줄 실행")
-        cfg = _db.load_config()
-        webhook = cfg.get('discord_webhook', '').strip()
-        if not webhook:
-            logging.warning("discord_webhook이 설정되지 않아 알림 생략")
-            return
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
-            cur.execute("SELECT notify_threshold FROM notification_settings WHERE id=1")
+            cur.execute("SELECT notify_threshold, discord_webhook FROM notification_settings WHERE id=1")
             trow = cur.fetchone()
             threshold = trow['notify_threshold'] if trow else 3
+            webhook = (trow['discord_webhook'] if trow else '').strip()
             cur.execute(
                 "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
                 (threshold,)
@@ -940,6 +940,9 @@ def create_app(config=None):
             items = cur.fetchall()
         finally:
             conn.close()
+        if not webhook:
+            logging.warning("discord_webhook이 설정되지 않아 알림 생략")
+            return
 
         if not items:
             logging.info("재고 부족 항목 없음 — 알림 생략")
@@ -982,6 +985,25 @@ def create_app(config=None):
                     )
 
             # 앱 시작 시 DB에서 설정 읽어 스케줄 복원
+            # config.json의 기존 webhook 값을 DB로 1회 마이그레이션
+            try:
+                cfg = _db.load_config()
+                old_webhook = cfg.get('discord_webhook', '').strip()
+                if old_webhook:
+                    conn = _db.get_connection()
+                    try:
+                        _ensure_notification_table(conn)
+                        cur = conn.cursor()
+                        cur.execute("SELECT discord_webhook FROM notification_settings WHERE id=1")
+                        r = cur.fetchone()
+                        if r and not r.get('discord_webhook', '').strip():
+                            cur.execute("UPDATE notification_settings SET discord_webhook=%s WHERE id=1", (old_webhook,))
+                            conn.commit()
+                            logging.info("config.json webhook → DB 마이그레이션 완료")
+                    finally:
+                        conn.close()
+            except Exception as e:
+                logging.warning("webhook 마이그레이션 실패: %s", e)
             try:
                 row = _get_notification_settings_row()
                 _reschedule_notification(row['enabled'], row['notify_hour'], row['notify_minute'])
