@@ -61,7 +61,9 @@
               <span class="ing-row-emoji" x-text="mi.emoji"></span>
               <span class="ing-row-name"  x-text="mi.name"></span>
               <span style="font-size:.82rem;color:var(--text-muted);"
-                    x-text="mi.unit_type==='quantity' ? `${mi.grams}개` : `${mi.grams}g`"></span>
+                    x-text="mi.unit_type==='quantity'
+                      ? `${mi.grams}개`
+                      : `${Math.round(mi.grams/mi.weight_per_cube)}큐브 (${mi.grams}g)`"></span>
             </div>
           </template>
         </div>
@@ -112,11 +114,11 @@
               <span class="ing-row-emoji" x-text="ing.emoji"></span>
               <span class="ing-row-name"  x-text="ing.name"></span>
               <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
-                    x-text="ing.unit_type==='quantity' ? '수량' : '중량'"></span>
+                    x-text="ing.unit_type==='quantity' ? '' : `1큐브=${ing.weight_per_cube}g`"></span>
               <input class="ing-row-input" type="number" min="0" placeholder="0"
-                     :value="grams[ing.id]||''"
-                     @input="grams[ing.id]=parseInt($event.target.value)||0">
-              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : 'g'"></span>
+                     :value="cubes[ing.id]||''"
+                     @input="cubes[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : '큐브'"></span>
             </div>
           </template>
         </div>
@@ -159,11 +161,11 @@
               <span class="ing-row-emoji" x-text="ing.emoji"></span>
               <span class="ing-row-name"  x-text="ing.name"></span>
               <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
-                    x-text="ing.unit_type==='quantity' ? '수량' : '중량'"></span>
+                    x-text="ing.unit_type==='quantity' ? '' : `1큐브=${ing.weight_per_cube}g`"></span>
               <input class="ing-row-input" type="number" min="0" placeholder="0"
-                     :value="grams[ing.id]||''"
-                     @input="grams[ing.id]=parseInt($event.target.value)||0">
-              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : 'g'"></span>
+                     :value="cubes[ing.id]||''"
+                     @input="cubes[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : '큐브'"></span>
             </div>
           </template>
         </div>

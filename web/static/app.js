@@ -478,7 +478,7 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
     return {
         date:      defaultDate || new Date().toISOString().split('T')[0],
         mealTime: defaultMealTime || 'morning',
-        grams:    {},
+        cubes:    {},
         mealTimes: [
             { value:'morning', label:'아침' },
             { value:'lunch',   label:'점심' },
@@ -487,12 +487,18 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
         ],
         ingredients,
 
-        get hasIngredients() { return Object.values(this.grams).some(g => g > 0); },
+        get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
+
+        _cubesToGrams(ingId, cubeCount) {
+            const ing = this.ingredients.find(i => i.id === ingId);
+            if (!ing) return cubeCount;
+            return ing.unit_type === 'weight' ? cubeCount * ing.weight_per_cube : cubeCount;
+        },
 
         async submit() {
-            const items = Object.entries(this.grams)
-                .filter(([, g]) => g > 0)
-                .map(([id, grams]) => ({ ingredient_id: parseInt(id), grams }));
+            const items = Object.entries(this.cubes)
+                .filter(([, c]) => c > 0)
+                .map(([id, c]) => ({ ingredient_id: parseInt(id), grams: this._cubesToGrams(parseInt(id), c) }));
             if (!items.length) return;
             await api('/api/meals', {
                 method:'POST',
@@ -505,13 +511,17 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
 
 // ─── 식단 수정 모달 ───
 function editMealModal(meal, ingredients) {
-    const initGrams = {};
-    for (const mi of (meal.ingredients || [])) initGrams[mi.ingredient_id] = mi.grams;
+    const initCubes = {};
+    for (const mi of (meal.ingredients || [])) {
+        initCubes[mi.ingredient_id] = mi.unit_type === 'weight'
+            ? Math.round(mi.grams / mi.weight_per_cube)
+            : mi.grams;
+    }
     return {
         mealId:   meal.id,
         date:     meal.date,
         mealTime: meal.meal_time,
-        grams:    { ...initGrams },
+        cubes:    { ...initCubes },
         mealTimes: [
             { value:'morning', label:'아침' },
             { value:'lunch',   label:'점심' },
@@ -520,12 +530,18 @@ function editMealModal(meal, ingredients) {
         ],
         ingredients,
 
-        get hasIngredients() { return Object.values(this.grams).some(g => g > 0); },
+        get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
+
+        _cubesToGrams(ingId, cubeCount) {
+            const ing = this.ingredients.find(i => i.id === ingId);
+            if (!ing) return cubeCount;
+            return ing.unit_type === 'weight' ? cubeCount * ing.weight_per_cube : cubeCount;
+        },
 
         async submit() {
-            const items = Object.entries(this.grams)
-                .filter(([, g]) => g > 0)
-                .map(([id, grams]) => ({ ingredient_id: parseInt(id), grams }));
+            const items = Object.entries(this.cubes)
+                .filter(([, c]) => c > 0)
+                .map(([id, c]) => ({ ingredient_id: parseInt(id), grams: this._cubesToGrams(parseInt(id), c) }));
             if (!items.length) return;
             await api(`/api/meals/${this.mealId}`, {
                 method: 'PUT',
