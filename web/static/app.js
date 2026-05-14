@@ -605,12 +605,6 @@ function editMealModal(meal, ingredients) {
 }
 
 // ─── 알러지 테스트 ───
-const ALLERGY_EMOJIS = [
-    '🧪','🥕','🥦','🌽','🍠','🥔','🎃','🥬','🧅','🧄',
-    '🥩','🍗','🐟','🥚','🧀','🍎','🍊','🫐','🍓','🍌',
-    '🥝','🍆','🍅','🥒','🫛','🥜','🌰','🫜','🍖','🦐',
-];
-
 function allergyPage() {
     return {
         tests: [],
@@ -620,9 +614,12 @@ function allergyPage() {
         editMode: false,
         selectedTest: null,
         addDate: '',
-        form: { emoji: '🧪', ingredient_name: '', memo: '' },
+        form: { emoji: '🥕', ingredient_name: '', memo: '' },
         editForm: { emoji: '', ingredient_name: '', memo: '' },
-        presetEmojis: ALLERGY_EMOJIS,
+        emojiSearch: '',
+        emojibaseAll: [],
+        emojibaseReady: false,
+        emojibaseLoading: false,
         _today: new Date(),
 
         async init() {
@@ -633,6 +630,36 @@ function allergyPage() {
 
         async load() {
             this.tests = await api('/api/allergy') || [];
+        },
+
+        async loadEmojis() {
+            if (this.emojibaseReady || this.emojibaseLoading) return;
+            this.emojibaseLoading = true;
+            this.emojibaseAll = await loadEmojibaseData();
+            this.emojibaseLoading = false;
+            this.emojibaseReady = true;
+        },
+
+        get displayEmojis() {
+            const q = this.emojiSearch.trim().toLowerCase();
+            if (!q) return PRESET_EMOJIS;
+            const seen = new Set();
+            const results = [];
+            for (const item of EMOJI_DATA) {
+                if (item.n.toLowerCase().includes(q) && !seen.has(item.e)) {
+                    seen.add(item.e);
+                    results.push(item.e);
+                }
+            }
+            for (const item of this.emojibaseAll) {
+                if (results.length >= 80) break;
+                const text = (item.label + ' ' + (item.tags || []).join(' ')).toLowerCase();
+                if (text.includes(q) && !seen.has(item.emoji)) {
+                    seen.add(item.emoji);
+                    results.push(item.emoji);
+                }
+            }
+            return results;
         },
 
         get viewYear()  { return this.viewDate.getFullYear(); },
@@ -679,7 +706,9 @@ function allergyPage() {
 
         openAdd(date) {
             this.addDate = this._dateStr(date);
-            this.form = { emoji: '🧪', ingredient_name: '', memo: '' };
+            this.form = { emoji: '🥕', ingredient_name: '', memo: '' };
+            this.emojiSearch = '';
+            this.loadEmojis();
             this.showAddModal = true;
         },
 
@@ -695,6 +724,8 @@ function allergyPage() {
                 ingredient_name: this.selectedTest.ingredient_name,
                 memo:            this.selectedTest.memo || '',
             };
+            this.emojiSearch = '';
+            this.loadEmojis();
             this.editMode = true;
         },
 
