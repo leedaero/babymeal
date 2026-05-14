@@ -92,12 +92,15 @@
         </div>
 
         <div class="form-actions" style="flex-wrap:wrap;gap:.4rem;">
-          <template x-if="selectedMeal.status==='upcoming'||selectedMeal.status==='skipped'">
-            <button class="btn btn-sm btn-green" @click="changeStatus(selectedMeal,'confirmed')">✅ 먹었어요</button>
-          </template>
-          <template x-if="selectedMeal.status==='auto-consumed'||selectedMeal.status==='confirmed'">
-            <button class="btn btn-sm btn-muted" @click="changeStatus(selectedMeal,'skipped')">↩ 안 먹었어요</button>
-          </template>
+          <button class="btn btn-sm"
+                  :class="selectedMeal.status==='confirmed'||selectedMeal.status==='auto-consumed' ? 'btn-blue' : 'btn-muted'"
+                  @click="changeStatus(selectedMeal,'confirmed')">✅ 먹었어요</button>
+          <button class="btn btn-sm"
+                  :class="selectedMeal.status==='upcoming' ? 'btn-yellow' : 'btn-muted'"
+                  @click="changeStatus(selectedMeal,'upcoming')">🔄 안먹었어요</button>
+          <button class="btn btn-sm"
+                  :class="selectedMeal.status==='skipped' ? 'btn-danger' : 'btn-muted'"
+                  @click="changeStatus(selectedMeal,'skipped')">⛔ 건너뜀</button>
           <button class="btn btn-sm btn-blue" @click="openEditMeal(selectedMeal)">✏️ 수정</button>
           <button class="btn btn-sm btn-danger" @click="deleteMeal(selectedMeal)">🗑 삭제</button>
           <button class="btn btn-sm btn-muted" @click="closeDetail()" style="margin-left:auto;">닫기</button>

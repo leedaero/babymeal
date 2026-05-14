@@ -704,7 +704,7 @@ def create_app(config=None):
             return jsonify({'error': 'not found'}), 404
         old_status = row['status']
 
-        if old_status in ('confirmed', 'auto-consumed') and new_status == 'skipped':
+        if old_status in ('confirmed', 'auto-consumed') and new_status in ('skipped', 'upcoming'):
             _apply_stock_delta(conn, meal_id, direction='restore')
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
             _apply_stock_delta(conn, meal_id, direction='deduct')

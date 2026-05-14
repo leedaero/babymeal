@@ -500,16 +500,16 @@ function schedulePage() {
 
         statusBadge(s) {
             return {
-                upcoming:        { cls:'badge-blue',    text:'예정' },
-                'auto-consumed': { cls:'badge-success', text:'자동 차감됨' },
-                confirmed:       { cls:'badge-success', text:'먹었어요 ✅' },
-                skipped:         { cls:'badge-muted',   text:'건너뜀' },
+                upcoming:        { cls:'badge-warning', text:'안먹었어요' },
+                'auto-consumed': { cls:'badge-blue',    text:'먹었어요' },
+                confirmed:       { cls:'badge-blue',    text:'먹었어요' },
+                skipped:         { cls:'badge-danger',  text:'건너뜀' },
             }[s] || { cls:'badge-muted', text:s };
         },
 
         chipColor(status) {
-            return { upcoming:'#3498db', confirmed:'#27ae60',
-                     skipped:'#95a5a6', 'auto-consumed':'#95a5a6' }[status] || '#888';
+            return { upcoming:'#F5A623', confirmed:'#3498db',
+                     skipped:'#e74c3c', 'auto-consumed':'#3498db' }[status] || '#888';
         },
 
         detailDateLabel(ds) {
