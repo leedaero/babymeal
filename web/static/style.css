@@ -342,8 +342,18 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 }
 .cal-slot-filled { font-weight: 600; }
 .cal-slot-filled:hover { filter: brightness(.9); }
+.cal-day-total {
+  display: block; font-size: .58rem; color: var(--accent-blue);
+  text-align: right; margin-top: .15rem; font-weight: 500;
+}
 
 .meal-time-label { font-weight: 600; font-size: .875rem; }
+.meal-total-row {
+  margin-top: .5rem; padding-top: .5rem;
+  border-top: 1px solid var(--border);
+  font-size: .85rem; color: var(--text-secondary);
+  text-align: right;
+}
 .meal-ing-chip {
   font-size: .75rem;
   background: var(--muted-bg); border: 1px solid var(--border);
