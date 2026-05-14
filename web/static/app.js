@@ -287,17 +287,26 @@ function statsPage() {
             if (this._chart) this._chart.destroy();
 
             const sorted = [...this.ingredients].sort((a, b) => b.current_cubes - a.current_cubes);
-            const isLow  = i => i.current_cubes <= 3;
+            const isLow     = i => i.current_cubes <= 3;
+            const isWhite   = i => (i.color || '').toUpperCase() === '#FFFFFF';
+
+            const bgFor     = i => isLow(i) ? '#e74c3cBB' : isWhite(i) ? '#E0E0E0BB' : (i.color || '#888') + 'BB';
+            const borderFor = i => isLow(i) ? '#e74c3c'   : isWhite(i) ? '#555555'   : (i.color || '#888');
+            const labelFor  = i => {
+                const grams = i.unit_type === 'weight' && i.weight_per_cube
+                    ? `  ${i.current_cubes * i.weight_per_cube}g` : '';
+                return `${i.emoji} ${i.name}${grams}`;
+            };
 
             this._chart = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: sorted.map(i => `${i.emoji} ${i.name}`),
+                    labels: sorted.map(i => labelFor(i)),
                     datasets: [{
                         data: sorted.map(i => i.current_cubes),
-                        backgroundColor: sorted.map(i => isLow(i) ? '#e74c3cBB' : (i.color || '#888') + 'BB'),
-                        borderColor:     sorted.map(i => isLow(i) ? '#e74c3c'   : (i.color || '#888')),
-                        borderWidth: 1,
+                        backgroundColor: sorted.map(i => bgFor(i)),
+                        borderColor:     sorted.map(i => borderFor(i)),
+                        borderWidth: sorted.map(i => isWhite(i) ? 2 : 1),
                         borderRadius: 5,
                     }],
                 },
@@ -307,7 +316,15 @@ function statsPage() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
-                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw}개` } },
+                        tooltip: { callbacks: {
+                            label: ctx => {
+                                const ing = sorted[ctx.dataIndex];
+                                if (ing.unit_type === 'weight' && ing.weight_per_cube) {
+                                    return ` ${ctx.raw}개 · ${ctx.raw * ing.weight_per_cube}g`;
+                                }
+                                return ` ${ctx.raw}개`;
+                            },
+                        }},
                     },
                     scales: {
                         x: {
