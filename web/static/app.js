@@ -488,7 +488,7 @@ function schedulePage() {
     };
 }
 
-// ─── 식단 추가 모달 ───
+// ─── 식단 만들기 모달 ───
 function mealModal(defaultDate, defaultMealTime, ingredients) {
     return {
         date:      defaultDate || new Date().toISOString().split('T')[0],

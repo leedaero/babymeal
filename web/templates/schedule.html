@@ -138,11 +138,11 @@
     </div>
   </template>
 
-  <!-- 식단 추가 모달 -->
+  <!-- 식단 만들기 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">
       <div class="modal-box" x-data="mealModal(addDefaultDate, addDefaultMealTime, ingredients)">
-        <p class="modal-title">식단 추가</p>
+        <p class="modal-title">식단 만들기</p>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">날짜</label>
