@@ -675,7 +675,7 @@ def create_app(config=None):
             payload = json.dumps({"content": "🍼 **치밀한 이유식** — 디스코드 알림 테스트입니다 ✅"}).encode("utf-8")
             req = urllib.request.Request(
                 webhook, data=payload,
-                headers={"Content-Type": "application/json"}, method="POST",
+                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
         except urllib.error.HTTPError as e:
@@ -716,7 +716,7 @@ def create_app(config=None):
             payload = json.dumps({"content": "\n".join(lines)}).encode("utf-8")
             req = urllib.request.Request(
                 webhook, data=payload,
-                headers={"Content-Type": "application/json"}, method="POST",
+                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
         except urllib.error.HTTPError as e:
@@ -798,7 +798,7 @@ def create_app(config=None):
             payload = json.dumps({"content": message}).encode("utf-8")
             req = urllib.request.Request(
                 webhook, data=payload,
-                headers={"Content-Type": "application/json"}, method="POST",
+                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
             logging.info("Discord 재고 부족 알림 전송 완료 (%d개 항목)", len(items))
