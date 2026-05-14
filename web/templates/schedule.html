@@ -35,25 +35,6 @@
               <span x-text="MEAL_LABELS[mt]"></span>
             </div>
           </template>
-          <!-- 알러지 테스트: 비어있어도 항상 표시, 클릭으로 추가/조회 -->
-          <template x-if="!cell.other">
-            <div class="cal-allergy-row"
-                 @click.stop="mealAt(cell.d,'tried') ? clickSlot(cell.d,'tried') : openAddMeal(_dateStr(cell.d),'tried')">
-              <template x-if="mealAt(cell.d,'tried') && (mealAt(cell.d,'tried').ingredients||[]).length">
-                <div style="display:flex;flex-wrap:wrap;gap:1px;">
-                  <template x-for="mi in (mealAt(cell.d,'tried').ingredients||[]).slice(0,2)" :key="mi.ingredient_id">
-                    <span class="cal-allergy-tag" x-text="`${mi.emoji}${mi.name}`"></span>
-                  </template>
-                </div>
-              </template>
-              <template x-if="mealAt(cell.d,'tried') && !(mealAt(cell.d,'tried').ingredients||[]).length">
-                <span class="cal-allergy-tag">알러지 테스트</span>
-              </template>
-              <template x-if="!mealAt(cell.d,'tried')">
-                <span class="cal-allergy-empty">🧪</span>
-              </template>
-            </div>
-          </template>
           <template x-if="!cell.other && dayTotalGrams(cell.d) > 0">
             <span class="cal-day-total" x-text="dayTotalGrams(cell.d) + 'g'"></span>
           </template>

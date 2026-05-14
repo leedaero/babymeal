@@ -1,0 +1,128 @@
+{% extends "_base.html" %}
+{% set active_tab = 'allergy' %}
+{% block title %}알러지 테스트 — 치밀한 이유식{% endblock %}
+
+{% block content %}
+<div x-data="allergyPage()" x-init="init()">
+
+  <!-- 월 네비게이션 -->
+  <div class="cal-header">
+    <button class="btn btn-sm btn-muted" @click="prevMonth()">◀</button>
+    <span class="cal-month-label" x-text="viewMonthLabel"></span>
+    <button class="btn btn-sm btn-muted" @click="nextMonth()">▶</button>
+    <button class="btn btn-sm btn-blue" @click="goToday()" style="margin-left:.25rem;">오늘</button>
+  </div>
+
+  <!-- 캘린더 -->
+  <div class="cal-wrap">
+    <div class="cal-weekdays">
+      <span style="color:#e74c3c">일</span>
+      <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span>
+      <span style="color:#3498db">토</span>
+    </div>
+    <div class="cal-grid">
+      <template x-for="cell in calendarDays" :key="cell.d.getTime()">
+        <div class="cal-cell al-cell"
+             :class="{ 'cal-today': isToday(cell.d), 'cal-other': cell.other }">
+
+          <!-- 날짜 + 추가 버튼 -->
+          <div class="al-cell-header">
+            <span class="cal-date-num" x-text="cell.d.getDate()"></span>
+            <template x-if="!cell.other">
+              <button class="al-add-btn" @click.stop="openAdd(cell.d)" title="추가">+</button>
+            </template>
+          </div>
+
+          <!-- 해당 날짜의 알러지 테스트 목록 -->
+          <template x-if="!cell.other">
+            <div class="al-entries">
+              <template x-for="test in testsOnDate(cell.d)" :key="test.id">
+                <div class="al-entry" @click="openDetail(test)">
+                  <span x-text="test.emoji"></span>
+                  <span class="al-entry-name" x-text="test.ingredient_name"></span>
+                </div>
+              </template>
+            </div>
+          </template>
+
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 기록 추가 모달 -->
+  <template x-if="showAddModal">
+    <div class="modal-overlay" @click.self="showAddModal=false">
+      <div class="modal-box">
+        <p class="modal-title">알러지 테스트 기록</p>
+
+        <div class="form-group">
+          <label class="form-label">이모지 선택</label>
+          <div style="text-align:center;font-size:2.5rem;margin-bottom:.5rem;" x-text="form.emoji"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem;">
+            <template x-for="e in presetEmojis" :key="e">
+              <button type="button"
+                      class="emoji-btn" :class="form.emoji===e ? 'selected' : ''"
+                      @click="form.emoji=e"
+                      x-text="e"
+                      style="font-size:1.1rem;width:36px;height:36px;"></button>
+            </template>
+          </div>
+          <input class="form-input" type="text" x-model="form.emoji"
+                 placeholder="직접 붙여넣기 가능"
+                 style="text-align:center;font-size:1.2rem;letter-spacing:.1rem;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">재료명</label>
+          <input class="form-input" type="text" x-model="form.ingredient_name"
+                 placeholder="예: 당근, 소고기, 토마토…"
+                 @keydown.enter="submit()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">메모 <span style="color:var(--text-muted);font-weight:400;">(선택)</span></label>
+          <textarea class="form-input" x-model="form.memo"
+                    placeholder="반응, 특이사항, 섭취량 등…"
+                    rows="3" style="resize:vertical;"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="showAddModal=false">취소</button>
+          <button class="btn btn-green" @click="submit()"
+                  :disabled="!form.ingredient_name.trim()">저장</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 상세 보기 모달 -->
+  <template x-if="showDetailModal && selectedTest">
+    <div class="modal-overlay" @click.self="showDetailModal=false">
+      <div class="modal-box">
+        <div style="text-align:center;padding:1rem 0 .75rem;">
+          <div style="font-size:3rem;line-height:1;" x-text="selectedTest.emoji"></div>
+          <p style="font-size:1.15rem;font-weight:700;margin:.5rem 0 .2rem;"
+             x-text="selectedTest.ingredient_name"></p>
+          <p style="font-size:.8rem;color:var(--text-muted);"
+             x-text="dateLabel(selectedTest.test_date)"></p>
+        </div>
+
+        <template x-if="selectedTest.memo">
+          <div style="background:var(--muted-bg);border-radius:var(--radius-sm);
+                      padding:.75rem 1rem;margin-bottom:1rem;">
+            <p style="font-size:.85rem;color:var(--text-secondary);white-space:pre-wrap;"
+               x-text="selectedTest.memo"></p>
+          </div>
+        </template>
+
+        <div class="form-actions">
+          <button class="btn btn-muted" @click="showDetailModal=false">닫기</button>
+          <button class="btn btn-danger" @click="deleteTest(selectedTest)">🗑 삭제</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}

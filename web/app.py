@@ -222,6 +222,57 @@ def create_app(config=None):
     def stats_page():
         return render_template('stats.html', **_page_ctx())
 
+    @app.route('/allergy')
+    @login_required
+    def allergy_page():
+        return render_template('allergy.html', **_page_ctx())
+
+    # ─── 알러지 테스트 API ────────────────────────────────────
+
+    @app.get('/api/allergy')
+    @login_required
+    def api_allergy_list():
+        cur = _mod.get_db().cursor()
+        cur.execute(
+            'SELECT * FROM allergy_tests WHERE user_id=%s ORDER BY test_date, id',
+            (get_view_user_id(),)
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+        for r in rows:
+            r['test_date']  = str(r['test_date'])
+            r['created_at'] = str(r['created_at'])[:10]
+        return jsonify(rows)
+
+    @app.post('/api/allergy')
+    @login_required
+    def api_allergy_add():
+        d = request.get_json() or {}
+        name = d.get('ingredient_name', '').strip()
+        if not d.get('test_date') or not name:
+            return jsonify({'error': '날짜와 재료명을 입력하세요'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute(
+            'INSERT INTO allergy_tests (user_id, test_date, emoji, ingredient_name, memo) VALUES (%s, %s, %s, %s, %s)',
+            (get_view_user_id(), d['test_date'], d.get('emoji', '🧪'), name, d.get('memo', ''))
+        )
+        conn.commit()
+        cur.execute('SELECT * FROM allergy_tests WHERE id=%s', (cur.lastrowid,))
+        row = dict(cur.fetchone())
+        row['test_date']  = str(row['test_date'])
+        row['created_at'] = str(row['created_at'])[:10]
+        return jsonify(row), 201
+
+    @app.delete('/api/allergy/<int:test_id>')
+    @login_required
+    def api_allergy_delete(test_id):
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM allergy_tests WHERE id=%s AND user_id=%s',
+                    (test_id, get_view_user_id()))
+        conn.commit()
+        return jsonify({'ok': True})
+
     @app.route('/settings')
     @admin_required
     def settings_page():

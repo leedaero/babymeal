@@ -347,31 +347,48 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 }
 .cal-slot-filled { font-weight: 600; }
 .cal-slot-filled:hover { filter: brightness(.9); }
-.cal-allergy-row {
+/* ─── 알러지 테스트 캘린더 ─── */
+
+.al-cell { position: relative; }
+.al-cell-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .1rem;
+}
+.al-add-btn {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--muted-bg);
+  font-size: .7rem; font-weight: 700; line-height: 1;
   cursor: pointer;
-  margin-top: .15rem;
-  padding: .1rem .2rem;
-  border-radius: 3px;
-  border-top: 1px dashed #c4b5fd;
-  min-height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); padding: 0;
+  transition: background .15s, color .15s, border-color .15s;
 }
-.cal-allergy-row:hover { background: #f3e8ff; }
-.cal-allergy-tag {
-  font-size: .52rem;
+.al-add-btn:hover {
   background: #8e44ad18;
-  border: 1px solid #8e44ad44;
-  border-radius: 2px;
-  padding: 0 .15rem;
-  white-space: nowrap;
-  overflow: hidden;
-  max-width: 58px;
-  text-overflow: ellipsis;
-  display: inline-block;
   color: #6b21a8;
+  border-color: #8e44ad55;
 }
-.cal-allergy-empty {
-  font-size: .6rem;
-  color: #c4b5fd;
+.al-entries { display: flex; flex-direction: column; gap: 2px; }
+.al-entry {
+  display: flex; align-items: center; gap: 2px;
+  font-size: .58rem; cursor: pointer;
+  background: #8e44ad14;
+  border: 1px solid #8e44ad33;
+  border-radius: 3px;
+  padding: .08rem .25rem;
+  transition: filter .1s;
+}
+.al-entry:hover { filter: brightness(.93); }
+.al-entry-name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #6b21a8; font-weight: 500; flex: 1; min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .al-entry { font-size: .52rem; }
+  .al-add-btn { width: 15px; height: 15px; font-size: .6rem; }
 }
 .cal-day-total {
   display: block; font-size: .58rem; color: var(--accent-blue);

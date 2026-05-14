@@ -604,6 +604,118 @@ function editMealModal(meal, ingredients) {
     };
 }
 
+// ─── 알러지 테스트 ───
+const ALLERGY_EMOJIS = [
+    '🧪','🥕','🥦','🌽','🍠','🥔','🎃','🥬','🧅','🧄',
+    '🥩','🍗','🐟','🥚','🧀','🍎','🍊','🫐','🍓','🍌',
+    '🥝','🍆','🍅','🥒','🫛','🥜','🌰','🫜','🍖','🦐',
+];
+
+function allergyPage() {
+    return {
+        tests: [],
+        viewDate: new Date(),
+        showAddModal: false,
+        showDetailModal: false,
+        selectedTest: null,
+        addDate: '',
+        form: { emoji: '🧪', ingredient_name: '', memo: '' },
+        presetEmojis: ALLERGY_EMOJIS,
+        _today: new Date(),
+
+        async init() {
+            const t = new Date();
+            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
+            await this.load();
+        },
+
+        async load() {
+            this.tests = await api('/api/allergy') || [];
+        },
+
+        get viewYear()  { return this.viewDate.getFullYear(); },
+        get viewMonth() { return this.viewDate.getMonth(); },
+        get viewMonthLabel() { return `${this.viewYear}년 ${this.viewMonth + 1}월`; },
+
+        prevMonth() { this.viewDate = new Date(this.viewYear, this.viewMonth - 1, 1); },
+        nextMonth() { this.viewDate = new Date(this.viewYear, this.viewMonth + 1, 1); },
+        goToday() {
+            const t = new Date();
+            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
+        },
+
+        get calendarDays() {
+            const y = this.viewYear, m = this.viewMonth;
+            const firstDow  = new Date(y, m, 1).getDay();
+            const daysInMon = new Date(y, m + 1, 0).getDate();
+            const prevLast  = new Date(y, m, 0).getDate();
+            const cells = [];
+            for (let i = firstDow - 1; i >= 0; i--)
+                cells.push({ d: new Date(y, m - 1, prevLast - i), other: true });
+            for (let d = 1; d <= daysInMon; d++)
+                cells.push({ d: new Date(y, m, d), other: false });
+            while (cells.length % 7 !== 0)
+                cells.push({ d: new Date(y, m + 1, cells.length - firstDow - daysInMon + 1), other: true });
+            return cells;
+        },
+
+        _dateStr(date) {
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+        },
+
+        testsOnDate(date) {
+            const ds = this._dateStr(date);
+            return this.tests.filter(t => t.test_date === ds);
+        },
+
+        isToday(date) {
+            const t = this._today;
+            return date.getFullYear() === t.getFullYear() &&
+                   date.getMonth()    === t.getMonth()    &&
+                   date.getDate()     === t.getDate();
+        },
+
+        openAdd(date) {
+            this.addDate = this._dateStr(date);
+            this.form = { emoji: '🧪', ingredient_name: '', memo: '' };
+            this.showAddModal = true;
+        },
+
+        openDetail(test) {
+            this.selectedTest = test;
+            this.showDetailModal = true;
+        },
+
+        async submit() {
+            if (!this.form.ingredient_name.trim()) return;
+            const res = await api('/api/allergy', {
+                method: 'POST',
+                body: { ...this.form, test_date: this.addDate },
+            });
+            if (res && res.id) {
+                this.tests = [...this.tests, res];
+                this.showAddModal = false;
+            }
+        },
+
+        async deleteTest(test) {
+            if (!confirm(`"${test.ingredient_name}" 기록을 삭제할까요?`)) return;
+            const res = await api(`/api/allergy/${test.id}`, { method: 'DELETE' });
+            if (res?.ok) {
+                this.tests = this.tests.filter(t => t.id !== test.id);
+                this.showDetailModal = false;
+                this.selectedTest = null;
+            }
+        },
+
+        dateLabel(ds) {
+            if (!ds) return '';
+            return new Date(ds + 'T00:00:00').toLocaleDateString('ko-KR',
+                { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        },
+    };
+}
+
 // ─── 설정 (관리자) ───
 function settingsPage() {
     return {
