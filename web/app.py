@@ -263,6 +263,26 @@ def create_app(config=None):
         row['created_at'] = str(row['created_at'])[:10]
         return jsonify(row), 201
 
+    @app.put('/api/allergy/<int:test_id>')
+    @login_required
+    def api_allergy_update(test_id):
+        d = request.get_json() or {}
+        name = d.get('ingredient_name', '').strip()
+        if not name:
+            return jsonify({'error': '재료명을 입력하세요'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute(
+            'UPDATE allergy_tests SET emoji=%s, ingredient_name=%s, memo=%s WHERE id=%s AND user_id=%s',
+            (d.get('emoji', '🧪'), name, d.get('memo', ''), test_id, get_view_user_id())
+        )
+        conn.commit()
+        cur.execute('SELECT * FROM allergy_tests WHERE id=%s', (test_id,))
+        row = dict(cur.fetchone())
+        row['test_date']  = str(row['test_date'])
+        row['created_at'] = str(row['created_at'])[:10]
+        return jsonify(row)
+
     @app.delete('/api/allergy/<int:test_id>')
     @login_required
     def api_allergy_delete(test_id):

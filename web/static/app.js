@@ -617,9 +617,11 @@ function allergyPage() {
         viewDate: new Date(),
         showAddModal: false,
         showDetailModal: false,
+        editMode: false,
         selectedTest: null,
         addDate: '',
         form: { emoji: '🧪', ingredient_name: '', memo: '' },
+        editForm: { emoji: '', ingredient_name: '', memo: '' },
         presetEmojis: ALLERGY_EMOJIS,
         _today: new Date(),
 
@@ -683,7 +685,31 @@ function allergyPage() {
 
         openDetail(test) {
             this.selectedTest = test;
+            this.editMode = false;
             this.showDetailModal = true;
+        },
+
+        startEdit() {
+            this.editForm = {
+                emoji:           this.selectedTest.emoji,
+                ingredient_name: this.selectedTest.ingredient_name,
+                memo:            this.selectedTest.memo || '',
+            };
+            this.editMode = true;
+        },
+
+        async submitEdit() {
+            if (!this.editForm.ingredient_name.trim()) return;
+            const res = await api(`/api/allergy/${this.selectedTest.id}`, {
+                method: 'PUT',
+                body: this.editForm,
+            });
+            if (res && res.id) {
+                const idx = this.tests.findIndex(t => t.id === res.id);
+                if (idx !== -1) this.tests[idx] = res;
+                this.selectedTest = res;
+                this.editMode = false;
+            }
         },
 
         async submit() {
