@@ -344,7 +344,7 @@ function statsPage() {
 }
 
 // ─── 식단표 (캘린더) ───
-const MEAL_LABELS = { morning:'아침', morning_snack:'오전간식', lunch:'점심', snack:'오후간식', dinner:'저녁', tried:'먹어봤음' };
+const MEAL_LABELS = { morning:'아침', morning_snack:'오전간식', lunch:'점심', snack:'오후간식', dinner:'저녁', tried:'알러지 테스트' };
 const MEAL_ORDER  = ['morning','morning_snack','lunch','snack','dinner'];
 
 function schedulePage() {
@@ -533,7 +533,7 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
             { value:'lunch',         label:'점심' },
             { value:'snack',         label:'오후간식' },
             { value:'dinner',        label:'저녁' },
-            { value:'tried',         label:'먹어봤음' },
+            { value:'tried',         label:'알러지 테스트' },
         ],
         ingredients,
 
@@ -578,7 +578,7 @@ function editMealModal(meal, ingredients) {
             { value:'lunch',         label:'점심' },
             { value:'snack',         label:'오후간식' },
             { value:'dinner',        label:'저녁' },
-            { value:'tried',         label:'먹어봤음' },
+            { value:'tried',         label:'알러지 테스트' },
         ],
         ingredients,
 
