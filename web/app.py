@@ -682,6 +682,40 @@ def create_app(config=None):
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
 
+    @app.post('/api/notification-settings/run')
+    @admin_required
+    def api_notification_run():
+        cfg = _db.load_config()
+        webhook = cfg.get('discord_webhook', '').strip()
+        if not webhook:
+            return jsonify({'error': 'discord_webhook이 설정되지 않았습니다'}), 400
+        conn = _db.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= 3 ORDER BY current_cubes"
+            )
+            items = cur.fetchall()
+        finally:
+            conn.close()
+        if not items:
+            return jsonify({'ok': True, 'sent': False, 'message': '재고 부족 항목이 없습니다'})
+        lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
+        for item in items:
+            bar = "▓" * item['current_cubes'] + "░" * (3 - item['current_cubes'])
+            lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
+        lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
+        try:
+            payload = json.dumps({"content": "\n".join(lines)}).encode("utf-8")
+            req = urllib.request.Request(
+                webhook, data=payload,
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            urllib.request.urlopen(req, timeout=10)
+        except Exception as e:
+            return jsonify({'error': f'전송 실패: {e}'}), 500
+        return jsonify({'ok': True, 'sent': True, 'count': len(items)})
+
     @app.put('/api/notification-settings')
     @admin_required
     def api_notification_put():
