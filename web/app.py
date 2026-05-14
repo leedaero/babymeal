@@ -708,6 +708,14 @@ def create_app(config=None):
             _apply_stock_delta(conn, meal_id, direction='restore')
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
             _apply_stock_delta(conn, meal_id, direction='deduct')
+            cur.execute("""
+                SELECT i.name, i.emoji, i.current_cubes
+                FROM meal_ingredients mi
+                JOIN ingredients i ON i.id = mi.ingredient_id
+                WHERE mi.meal_id = %s
+            """, (meal_id,))
+            for ing in cur.fetchall():
+                threading.Thread(target=_send_realtime_alert, args=(dict(ing),), daemon=True).start()
 
         cur.execute('UPDATE meals SET status=%s WHERE id=%s AND user_id=%s',
                     (new_status, meal_id, get_view_user_id()))
