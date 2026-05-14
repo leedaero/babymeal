@@ -678,6 +678,12 @@ def create_app(config=None):
                 headers={"Content-Type": "application/json"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return jsonify({'error': '웹훅이 삭제되었습니다. Discord에서 새 웹훅 URL을 생성해 주세요.'}), 500
+            if e.code == 403:
+                return jsonify({'error': '웹훅 권한 오류(403). URL이 올바른지 확인하거나 Discord에서 웹훅을 재생성해 주세요.'}), 500
+            return jsonify({'error': f'Discord 오류 {e.code}: {e.reason}'}), 500
         except Exception as e:
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
@@ -712,6 +718,12 @@ def create_app(config=None):
                 headers={"Content-Type": "application/json"}, method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return jsonify({'error': '웹훅이 삭제되었습니다. Discord에서 새 웹훅 URL을 생성해 주세요.'}), 500
+            if e.code == 403:
+                return jsonify({'error': '웹훅 권한 오류(403). URL이 올바른지 확인하거나 Discord에서 웹훅을 재생성해 주세요.'}), 500
+            return jsonify({'error': f'Discord 오류 {e.code}: {e.reason}'}), 500
         except Exception as e:
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True, 'sent': True, 'count': len(items)})
