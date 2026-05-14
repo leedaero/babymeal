@@ -116,7 +116,7 @@ const EMOJI_DATA = [
     {e:'🥔',n:'감자 potato'},
     {e:'🎃',n:'호박 단호박 애호박 늙은호박 pumpkin squash'},
     {e:'🥬',n:'청경채 시금치 상추 채소 leafy green'},
-    {e:'🫜',n:'무 무우 radish daikon 뿌리채소 turnip beet root vegetable'},
+    {e:'🫜',n:'무 무우 radish daikon 뿌리채소 turnip beet root vegetable 비트 beetroot'},
     {e:'🥗',n:'샐러드 salad'},
     {e:'🫑',n:'파프리카 피망 bell pepper'},
     {e:'🌶️',n:'고추 chili pepper'},
@@ -241,6 +241,7 @@ function ingredientModal(editTarget) {
             // emojibase 영문 검색 (label + tags)
             for (const item of this.emojibaseAll) {
                 if (results.length >= 80) break;
+                if (!item.emoji || typeof item.emoji !== 'string') continue;
                 const text = (item.label + ' ' + (item.tags || []).join(' ')).toLowerCase();
                 if (text.includes(q) && !seen.has(item.emoji)) {
                     seen.add(item.emoji);
@@ -653,6 +654,7 @@ function allergyPage() {
             }
             for (const item of this.emojibaseAll) {
                 if (results.length >= 80) break;
+                if (!item.emoji || typeof item.emoji !== 'string') continue;
                 const text = (item.label + ' ' + (item.tags || []).join(' ')).toLowerCase();
                 if (text.includes(q) && !seen.has(item.emoji)) {
                     seen.add(item.emoji);
