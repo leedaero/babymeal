@@ -511,6 +511,8 @@ def create_app(config=None):
         d = {k: v for k, v in d.items() if k in UPDATABLE_FIELDS}
         if not d:
             return jsonify({'error': 'no valid fields'}), 400
+        if 'total_cubes' in d:
+            d['current_cubes'] = d['total_cubes']
         sets = ', '.join(f'{k}=%({k})s' for k in d)
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s AND user_id=%(uid)s',
                     {**d, 'id': ing_id, 'uid': get_view_user_id()})
