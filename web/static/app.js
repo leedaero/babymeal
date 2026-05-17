@@ -634,32 +634,17 @@ function editMealModal(meal, ingredients) {
     };
 }
 
-// ─── 알러지 테스트 ───
-function allergyPage() {
+// ─── 알러지 이모지 피커 (모달 서브컴포넌트) ───
+function allergyEmojiPicker(form) {
     return {
-        tests: [],
-        viewDate: new Date(),
-        showAddModal: false,
-        showDetailModal: false,
-        editMode: false,
-        selectedTest: null,
-        addDate: '',
-        form: { emoji: '🥕', ingredient_name: '', memo: '' },
-        editForm: { emoji: '', ingredient_name: '', memo: '' },
+        form,
         emojiSearch: '',
         emojibaseAll: [],
         emojibaseReady: false,
         emojibaseLoading: false,
-        _today: new Date(),
 
         async init() {
-            const t = new Date();
-            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
-            await this.load();
-        },
-
-        async load() {
-            this.tests = await api('/api/allergy') || [];
+            this.loadEmojis();
         },
 
         async loadEmojis() {
@@ -691,6 +676,37 @@ function allergyPage() {
                 }
             }
             return results;
+        },
+
+        selectEmoji(e) {
+            this.form.emoji = e;
+            this.emojiSearch = '';
+        },
+    };
+}
+
+// ─── 알러지 테스트 ───
+function allergyPage() {
+    return {
+        tests: [],
+        viewDate: new Date(),
+        showAddModal: false,
+        showDetailModal: false,
+        editMode: false,
+        selectedTest: null,
+        addDate: '',
+        form: { emoji: '🥕', ingredient_name: '', memo: '' },
+        editForm: { emoji: '', ingredient_name: '', memo: '' },
+        _today: new Date(),
+
+        async init() {
+            const t = new Date();
+            this.viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
+            await this.load();
+        },
+
+        async load() {
+            this.tests = await api('/api/allergy') || [];
         },
 
         get viewYear()  { return this.viewDate.getFullYear(); },
@@ -738,8 +754,6 @@ function allergyPage() {
         openAdd(date) {
             this.addDate = this._dateStr(date);
             this.form = { emoji: '🥕', ingredient_name: '', memo: '' };
-            this.emojiSearch = '';
-            this.loadEmojis();
             this.showAddModal = true;
         },
 
@@ -755,8 +769,6 @@ function allergyPage() {
                 ingredient_name: this.selectedTest.ingredient_name,
                 memo:            this.selectedTest.memo || '',
             };
-            this.emojiSearch = '';
-            this.loadEmojis();
             this.editMode = true;
         },
 

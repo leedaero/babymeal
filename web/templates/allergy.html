@@ -56,7 +56,7 @@
       <div class="modal-box">
         <p class="modal-title">알러지 테스트 기록</p>
 
-        <div class="form-group">
+        <div class="form-group" x-data="allergyEmojiPicker(form)">
           <label class="form-label">이모지 선택</label>
           <input class="form-input" x-model="emojiSearch"
                  placeholder="🔍 이모지 검색 (예: 닭, 당근, fish…)"
@@ -67,7 +67,7 @@
           <div class="emoji-grid">
             <template x-for="e in displayEmojis" :key="e">
               <button class="emoji-btn" :class="form.emoji===e?'selected':''"
-                      @click="form.emoji=e; emojiSearch=''" type="button" :title="e">
+                      @click="selectEmoji(e)" type="button" :title="e">
                 <img :src="emojiToCdnUrl(e)" width="24" height="24"
                      style="object-fit:contain;pointer-events:none;"
                      loading="lazy" alt=""
@@ -142,7 +142,7 @@
           <div>
             <p class="modal-title">기록 수정</p>
 
-            <div class="form-group">
+            <div class="form-group" x-data="allergyEmojiPicker(editForm)">
               <label class="form-label">이모지 선택</label>
               <input class="form-input" x-model="emojiSearch"
                      placeholder="🔍 이모지 검색 (예: 닭, 당근, fish…)"
@@ -152,8 +152,8 @@
               </template>
               <div class="emoji-grid">
                 <template x-for="e in displayEmojis" :key="e">
-                  <button class="emoji-btn" :class="editForm.emoji===e?'selected':''"
-                          @click="editForm.emoji=e; emojiSearch=''" type="button" :title="e">
+                  <button class="emoji-btn" :class="form.emoji===e?'selected':''"
+                          @click="selectEmoji(e)" type="button" :title="e">
                     <img :src="emojiToCdnUrl(e)" width="24" height="24"
                          style="object-fit:contain;pointer-events:none;"
                          loading="lazy" alt=""
