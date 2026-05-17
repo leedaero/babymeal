@@ -30,6 +30,11 @@ def get_db():
 
 _VALID_STATUSES  = {'upcoming', 'confirmed', 'skipped', 'auto-consumed'}
 _VALID_MEAL_TIMES = {'morning', 'lunch', 'snack', 'dinner', 'morning_snack', 'tried'}
+_MEAL_TIME_KO = {
+    'morning': '아침', 'morning_snack': '오전간식',
+    'lunch': '점심', 'snack': '오후간식',
+    'dinner': '저녁', 'tried': '알러지 테스트',
+}
 
 
 def create_app(config=None):
@@ -760,6 +765,9 @@ def create_app(config=None):
             """, (meal_id,))
             for ing in cur.fetchall():
                 threading.Thread(target=_send_realtime_alert, args=(dict(ing),), daemon=True).start()
+        elif old_status == 'auto-consumed' and new_status == 'confirmed':
+            # 큐브는 이미 차감됐으므로 로그만 기록
+            _log_auto_consumed(conn, meal_id, get_view_user_id())
 
         cur.execute('UPDATE meals SET status=%s WHERE id=%s AND user_id=%s',
                     (new_status, meal_id, get_view_user_id()))
@@ -784,14 +792,29 @@ def create_app(config=None):
                 (delta, r['ingredient_id'])
             )
             if direction == 'deduct' and user_id is not None:
-                _MEAL_TIME_KO = {
-                    'morning': '아침', 'morning_snack': '오전간식',
-                    'lunch': '점심', 'snack': '오후간식',
-                    'dinner': '저녁', 'tried': '알러지 테스트',
-                }
                 time_label = _MEAL_TIME_KO.get(r['meal_time'], r['meal_time'])
                 note = f"{r['meal_date']} {time_label}"
                 _log_ingredient_event(conn, r['ingredient_id'], user_id, 'fed', delta, note)
+
+    def _log_auto_consumed(conn, meal_id, user_id):
+        """auto-consumed 상태에서 confirmed로 변경 시 로그만 기록 (큐브 차감 없음)."""
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT mi.ingredient_id, mi.grams, i.weight_per_cube, i.unit_type,
+                   m.date AS meal_date, m.meal_time
+            FROM meal_ingredients mi
+            JOIN ingredients i ON i.id = mi.ingredient_id
+            JOIN meals m ON m.id = mi.meal_id
+            WHERE mi.meal_id=%s
+        """, (meal_id,))
+        for r in cur.fetchall():
+            wpc = r['weight_per_cube'] if r.get('unit_type') != 'quantity' else 1
+            if not wpc:
+                continue
+            cubes = round(r['grams'] / wpc)
+            time_label = _MEAL_TIME_KO.get(r['meal_time'], r['meal_time'])
+            note = f"{r['meal_date']} {time_label}"
+            _log_ingredient_event(conn, r['ingredient_id'], user_id, 'fed', -cubes, note)
 
     # ─── 알림 설정 API ────────────────────────────────────────
 
