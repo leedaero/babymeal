@@ -80,6 +80,22 @@ function inventoryPage() {
             this.editTarget = null;
             await this.load();
         },
+
+        historyIng: null,
+        historyLogs: [],
+        showHistoryModal: false,
+
+        async openHistory(ing) {
+            this.historyIng = ing;
+            this.showHistoryModal = true;
+            this.historyLogs = await api(`/api/ingredients/${ing.id}/logs`) || [];
+        },
+
+        historyLabel(log) {
+            const icons  = { created: '🆕', fed: '🍼', replenished: '🔁' };
+            const labels = { created: '제작', fed: '먹힘', replenished: '보충' };
+            return `${icons[log.event_type] || '•'} ${labels[log.event_type] || log.event_type}`;
+        },
     };
 }
 
