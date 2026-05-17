@@ -447,6 +447,11 @@ function schedulePage() {
         openDetail(meal)  {
             this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] };
             this.checkedIngredients = {};
+            for (const mi of meal.ingredients || []) {
+                // confirmed/auto-consumed: 저장된 consumed 상태 복원, 나머지: 전체 체크
+                const isConsumedState = meal.status === 'confirmed' || meal.status === 'auto-consumed';
+                this.checkedIngredients[mi.ingredient_id] = isConsumedState ? !!mi.consumed : true;
+            }
         },
         closeDetail()     { this.selectedMeal = null; this.checkedIngredients = {}; },
 
@@ -496,13 +501,23 @@ function schedulePage() {
         },
 
         async changeStatus(meal, status) {
-            const updated = await api(`/api/meals/${meal.id}/status`,
-                { method: 'POST', body: { status } });
+            const body = { status };
+            if (status === 'confirmed' && (meal.status === 'upcoming' || meal.status === 'skipped')) {
+                body.consumed_ids = Object.entries(this.checkedIngredients)
+                    .filter(([, v]) => v)
+                    .map(([k]) => parseInt(k));
+            }
+            const updated = await api(`/api/meals/${meal.id}/status`, { method: 'POST', body });
             if (updated) {
                 const idx = this.meals.findIndex(m => m.id === meal.id);
                 if (idx !== -1) this.meals[idx] = updated;
                 this.selectedMeal = { ...updated, ingredients: updated.ingredients || [] };
-                this.ingredients  = await api('/api/ingredients') || [];
+                // 저장된 consumed 상태로 체크박스 갱신
+                this.checkedIngredients = {};
+                for (const mi of updated.ingredients || []) {
+                    this.checkedIngredients[mi.ingredient_id] = !!mi.consumed;
+                }
+                this.ingredients = await api('/api/ingredients') || [];
             }
         },
 

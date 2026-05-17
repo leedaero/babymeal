@@ -449,6 +449,18 @@ def create_app(config=None):
             r['created_at'] = str(r['created_at'])[:10]
         return r
 
+    def _ensure_meal_ingredients_consumed_col(conn):
+        if getattr(_ensure_meal_ingredients_consumed_col, '_done', False):
+            return
+        _ensure_meal_ingredients_consumed_col._done = True
+        try:
+            conn.cursor().execute(
+                "ALTER TABLE meal_ingredients ADD COLUMN consumed TINYINT(1) NOT NULL DEFAULT 1"
+            )
+            conn.commit()
+        except Exception:
+            pass  # already exists
+
     def _ensure_ingredient_logs_table(conn):
         cur = conn.cursor()
         cur.execute("""
@@ -650,12 +662,13 @@ def create_app(config=None):
     # ─── 식단 API ─────────────────────────────────────────
 
     def _meal_with_ingredients(conn, meal_id):
+        _ensure_meal_ingredients_consumed_col(conn)
         cur = conn.cursor()
         cur.execute('SELECT * FROM meals WHERE id=%s', (meal_id,))
         meal = dict(cur.fetchone())
         meal['date'] = str(meal['date'])
         cur.execute("""
-            SELECT mi.ingredient_id, mi.grams, i.name, i.emoji, i.weight_per_cube, i.unit_type
+            SELECT mi.ingredient_id, mi.grams, mi.consumed, i.name, i.emoji, i.weight_per_cube, i.unit_type
             FROM meal_ingredients mi
             JOIN ingredients i ON i.id = mi.ingredient_id
             WHERE mi.meal_id=%s
@@ -755,14 +768,27 @@ def create_app(config=None):
 
         if old_status in ('confirmed', 'auto-consumed') and new_status in ('skipped', 'upcoming'):
             _apply_stock_delta(conn, meal_id, direction='restore')
+            # 복원 후 consumed 초기화 (다음 확인 시 전체 체크 상태)
+            cur.execute('UPDATE meal_ingredients SET consumed=1 WHERE meal_id=%s', (meal_id,))
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
+            # 체크된 재료만 consumed=1, 해제된 재료는 consumed=0
+            consumed_ids = body.get('consumed_ids')
+            if consumed_ids is not None:
+                cur.execute('SELECT ingredient_id FROM meal_ingredients WHERE meal_id=%s', (meal_id,))
+                all_ids = [r['ingredient_id'] for r in cur.fetchall()]
+                consumed_set = set(consumed_ids)
+                for ing_id in all_ids:
+                    cur.execute(
+                        'UPDATE meal_ingredients SET consumed=%s WHERE meal_id=%s AND ingredient_id=%s',
+                        (1 if ing_id in consumed_set else 0, meal_id, ing_id)
+                    )
             _apply_stock_delta(conn, meal_id, direction='deduct', user_id=get_view_user_id())
             _username = session.get('username', '')
             cur.execute("""
                 SELECT i.name, i.emoji, i.current_cubes
                 FROM meal_ingredients mi
                 JOIN ingredients i ON i.id = mi.ingredient_id
-                WHERE mi.meal_id = %s
+                WHERE mi.meal_id = %s AND COALESCE(mi.consumed, 1) = 1
             """, (meal_id,))
             for ing in cur.fetchall():
                 threading.Thread(target=_send_realtime_alert, args=(dict(ing), _username), daemon=True).start()
@@ -783,7 +809,7 @@ def create_app(config=None):
             FROM meal_ingredients mi
             JOIN ingredients i ON i.id = mi.ingredient_id
             JOIN meals m ON m.id = mi.meal_id
-            WHERE mi.meal_id=%s
+            WHERE mi.meal_id=%s AND COALESCE(mi.consumed, 1) = 1
         """, (meal_id,))
         for r in cur.fetchall():
             wpc = r['weight_per_cube'] if r.get('unit_type') != 'quantity' else 1
