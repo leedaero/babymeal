@@ -183,3 +183,32 @@ def test_ingredients_list_filtered_by_user(authed_client):
     assert resp.status_code == 200
     call_args = cur.execute.call_args_list[0]
     assert '1' in str(call_args) or 1 in str(call_args)
+
+
+def test_api_ingredient_logs(authed_client):
+    from datetime import datetime
+    log_rows = [
+        {'id': 1, 'event_type': 'created', 'delta': 10,
+         'note': None, 'logged_at': datetime(2026, 5, 1, 0, 0, 0)},
+        {'id': 2, 'event_type': 'fed', 'delta': -2,
+         'note': '2026-05-10 lunch', 'logged_at': datetime(2026, 5, 10, 12, 0, 0)},
+    ]
+    cur = make_cursor(log_rows)
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        resp = authed_client.get('/api/ingredients/1/logs')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert len(data) == 2
+    assert data[0]['event_type'] == 'created'
+    assert data[0]['delta'] == 10
+    assert data[0]['logged_at'] == '2026-05-01 00:00'
+    assert data[1]['event_type'] == 'fed'
+    assert data[1]['delta'] == -2
+    assert data[1]['note'] == '2026-05-10 lunch'
+
+
+def test_api_ingredient_logs_requires_auth(app):
+    client = app.test_client()
+    resp = client.get('/api/ingredients/1/logs')
+    assert resp.status_code == 302

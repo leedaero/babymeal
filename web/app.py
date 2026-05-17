@@ -562,6 +562,18 @@ def create_app(config=None):
         threading.Thread(target=_send_realtime_alert, args=(ing,), daemon=True).start()
         return jsonify(ing)
 
+    @app.get('/api/ingredients/<int:ing_id>/logs')
+    @login_required
+    def api_ingredient_logs(ing_id):
+        cur = _mod.get_db().cursor()
+        cur.execute(
+            'SELECT id, event_type, delta, note, logged_at '
+            'FROM ingredient_logs WHERE ingredient_id=%s AND user_id=%s ORDER BY logged_at DESC',
+            (ing_id, get_view_user_id())
+        )
+        rows = cur.fetchall()
+        return jsonify([{**r, 'logged_at': str(r['logged_at'])[:16]} for r in rows])
+
     # ─── 이모지 이미지 API ────────────────────────────────────
 
     @app.get('/api/emoji/<codepoint>')
