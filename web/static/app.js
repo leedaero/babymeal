@@ -139,7 +139,7 @@ const EMOJI_DATA = [
     {e:'🧅',n:'양파 onion'},
     {e:'🧄',n:'마늘 garlic'},
     {e:'🫛',n:'완두콩 pea pod'},
-    {e:'🫘',n:'콩 bean'},
+    {e:'🫘',n:'콩 두부 연두부 bean tofu soy'},
     {e:'🥜',n:'땅콩 peanut'},
     {e:'🌰',n:'밤 chesnut'},
     {e:'🥑',n:'아보카도 avocado'},
