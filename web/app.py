@@ -464,7 +464,6 @@ def create_app(config=None):
                 INDEX idx_user_id (user_id)
             )
         """)
-        conn.commit()
 
     def _log_ingredient_event(conn, ingredient_id, user_id, event_type, delta, note=None):
         _ensure_ingredient_logs_table(conn)
@@ -777,7 +776,7 @@ def create_app(config=None):
     def _apply_stock_delta(conn, meal_id, direction, user_id=None):
         cur = conn.cursor()
         cur.execute("""
-            SELECT mi.ingredient_id, mi.grams, i.weight_per_cube,
+            SELECT mi.ingredient_id, mi.grams, i.weight_per_cube, i.unit_type,
                    m.date AS meal_date, m.meal_time
             FROM meal_ingredients mi
             JOIN ingredients i ON i.id = mi.ingredient_id
@@ -785,7 +784,10 @@ def create_app(config=None):
             WHERE mi.meal_id=%s
         """, (meal_id,))
         for r in cur.fetchall():
-            cubes = round(r['grams'] / r['weight_per_cube'])
+            wpc = r['weight_per_cube'] if r.get('unit_type') != 'quantity' else 1
+            if not wpc:
+                continue
+            cubes = round(r['grams'] / wpc)
             delta = -cubes if direction == 'deduct' else cubes
             cur.execute(
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
