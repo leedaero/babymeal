@@ -731,7 +731,7 @@ def create_app(config=None):
         if old_status in ('confirmed', 'auto-consumed') and new_status in ('skipped', 'upcoming'):
             _apply_stock_delta(conn, meal_id, direction='restore')
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
-            _apply_stock_delta(conn, meal_id, direction='deduct')
+            _apply_stock_delta(conn, meal_id, direction='deduct', user_id=get_view_user_id())
             cur.execute("""
                 SELECT i.name, i.emoji, i.current_cubes
                 FROM meal_ingredients mi
@@ -746,12 +746,14 @@ def create_app(config=None):
         conn.commit()
         return jsonify(_meal_with_ingredients(conn, meal_id))
 
-    def _apply_stock_delta(conn, meal_id, direction):
+    def _apply_stock_delta(conn, meal_id, direction, user_id=None):
         cur = conn.cursor()
         cur.execute("""
-            SELECT mi.ingredient_id, mi.grams, i.weight_per_cube
+            SELECT mi.ingredient_id, mi.grams, i.weight_per_cube,
+                   m.date AS meal_date, m.meal_time
             FROM meal_ingredients mi
             JOIN ingredients i ON i.id = mi.ingredient_id
+            JOIN meals m ON m.id = mi.meal_id
             WHERE mi.meal_id=%s
         """, (meal_id,))
         for r in cur.fetchall():
@@ -761,6 +763,9 @@ def create_app(config=None):
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
                 (delta, r['ingredient_id'])
             )
+            if direction == 'deduct' and user_id is not None:
+                note = f"{r['meal_date']} {r['meal_time']}"
+                _log_ingredient_event(conn, r['ingredient_id'], user_id, 'fed', delta, note)
 
     # ─── 알림 설정 API ────────────────────────────────────────
 
