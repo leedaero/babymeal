@@ -444,6 +444,13 @@ def create_app(config=None):
             r['created_at'] = str(r['created_at'])[:10]
         return r
 
+    def _log_ingredient_event(conn, ingredient_id, user_id, event_type, delta, note=None):
+        conn.cursor().execute(
+            'INSERT INTO ingredient_logs (ingredient_id, user_id, event_type, delta, note)'
+            ' VALUES (%s, %s, %s, %s, %s)',
+            (ingredient_id, user_id, event_type, delta, note)
+        )
+
     @app.get('/api/ingredients')
     @login_required
     def api_ingredients_list():
@@ -485,6 +492,7 @@ def create_app(config=None):
             VALUES (%(name)s, %(emoji)s, %(color)s, %(created_at)s,
                     %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(unit_type)s, %(user_id)s)
         """, {**d, 'user_id': get_view_user_id()})
+        _log_ingredient_event(conn, cur.lastrowid, get_view_user_id(), 'created', d['total_cubes'])
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (cur.lastrowid,))
         ing = dict(cur.fetchone())
@@ -516,6 +524,8 @@ def create_app(config=None):
         sets = ', '.join(f'{k}=%({k})s' for k in d)
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s AND user_id=%(uid)s',
                     {**d, 'id': ing_id, 'uid': get_view_user_id()})
+        if 'total_cubes' in d:
+            _log_ingredient_event(conn, ing_id, get_view_user_id(), 'replenished', d['total_cubes'])
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = dict(cur.fetchone())
