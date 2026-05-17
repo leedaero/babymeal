@@ -591,7 +591,8 @@ def create_app(config=None):
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = _fmt_ingredient(cur.fetchone())
-        threading.Thread(target=_send_realtime_alert, args=(ing,), daemon=True).start()
+        _username = session.get('username', '')
+        threading.Thread(target=_send_realtime_alert, args=(ing, _username), daemon=True).start()
         return jsonify(ing)
 
     @app.get('/api/ingredients/<int:ing_id>/logs')
@@ -756,6 +757,7 @@ def create_app(config=None):
             _apply_stock_delta(conn, meal_id, direction='restore')
         elif old_status in ('upcoming', 'skipped') and new_status == 'confirmed':
             _apply_stock_delta(conn, meal_id, direction='deduct', user_id=get_view_user_id())
+            _username = session.get('username', '')
             cur.execute("""
                 SELECT i.name, i.emoji, i.current_cubes
                 FROM meal_ingredients mi
@@ -763,7 +765,7 @@ def create_app(config=None):
                 WHERE mi.meal_id = %s
             """, (meal_id,))
             for ing in cur.fetchall():
-                threading.Thread(target=_send_realtime_alert, args=(dict(ing),), daemon=True).start()
+                threading.Thread(target=_send_realtime_alert, args=(dict(ing), _username), daemon=True).start()
         elif old_status == 'auto-consumed' and new_status == 'confirmed':
             # 큐브는 이미 차감됐으므로 로그만 기록
             _log_auto_consumed(conn, meal_id, get_view_user_id())
@@ -975,7 +977,7 @@ def create_app(config=None):
 
     # ─── APScheduler ─────────────────────────────────────────
 
-    def _send_realtime_alert(ing):
+    def _send_realtime_alert(ing, username=''):
         try:
             conn = _db.get_connection()
             try:
@@ -994,8 +996,9 @@ def create_app(config=None):
         if ing['current_cubes'] > threshold:
             return
         bar = "▓" * ing['current_cubes'] + "░" * max(0, threshold - ing['current_cubes'])
+        who = f" (by **{username}**)" if username else ""
         message = (
-            f"⚠️ **재고 부족** — 치밀한 이유식\n"
+            f"⚠️ **재고 부족** — 치밀한 이유식{who}\n"
             f"{ing['emoji']} **{ing['name']}** — {ing['current_cubes']}개 남음  `{bar}`\n"
             f"> 재고 탭에서 큐브를 보충해주세요 🍼"
         )
