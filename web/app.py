@@ -764,7 +764,13 @@ def create_app(config=None):
                 (delta, r['ingredient_id'])
             )
             if direction == 'deduct' and user_id is not None:
-                note = f"{r['meal_date']} {r['meal_time']}"
+                _MEAL_TIME_KO = {
+                    'morning': '아침', 'morning_snack': '오전간식',
+                    'lunch': '점심', 'snack': '오후간식',
+                    'dinner': '저녁', 'tried': '알러지 테스트',
+                }
+                time_label = _MEAL_TIME_KO.get(r['meal_time'], r['meal_time'])
+                note = f"{r['meal_date']} {time_label}"
                 _log_ingredient_event(conn, r['ingredient_id'], user_id, 'fed', delta, note)
 
     # ─── 알림 설정 API ────────────────────────────────────────
