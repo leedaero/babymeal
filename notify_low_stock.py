@@ -17,7 +17,7 @@ LOW_STOCK_THRESHOLD = 3
 def fetch_low_stock(conn):
     cur = conn.cursor()
     cur.execute(
-        "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
+        "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s AND deleted=0 ORDER BY current_cubes",
         (LOW_STOCK_THRESHOLD,),
     )
     return cur.fetchall()

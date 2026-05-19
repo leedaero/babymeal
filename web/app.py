@@ -489,7 +489,7 @@ def create_app(config=None):
     @login_required
     def api_ingredients_list():
         cur = _mod.get_db().cursor()
-        cur.execute('SELECT * FROM ingredients WHERE user_id=%s ORDER BY name',
+        cur.execute('SELECT * FROM ingredients WHERE user_id=%s AND deleted=0 ORDER BY name',
                     (get_view_user_id(),))
         return jsonify([_fmt_ingredient(r) for r in cur.fetchall()])
 
@@ -581,7 +581,7 @@ def create_app(config=None):
     def api_ingredients_delete(ing_id):
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute('DELETE FROM ingredients WHERE id=%s AND user_id=%s',
+        cur.execute('UPDATE ingredients SET deleted=1 WHERE id=%s AND user_id=%s',
                     (ing_id, get_view_user_id()))
         conn.commit()
         return jsonify({'ok': True})
@@ -939,7 +939,7 @@ def create_app(config=None):
         try:
             cur = conn.cursor()
             cur.execute(
-                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s AND deleted=0 ORDER BY current_cubes",
                 (threshold,)
             )
             items = cur.fetchall()
@@ -1051,7 +1051,7 @@ def create_app(config=None):
             threshold = trow['notify_threshold'] if trow else 3
             webhook = (trow['discord_webhook'] if trow else '').strip()
             cur.execute(
-                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s ORDER BY current_cubes",
+                "SELECT name, emoji, current_cubes FROM ingredients WHERE current_cubes <= %s AND deleted=0 ORDER BY current_cubes",
                 (threshold,)
             )
             items = cur.fetchall()
