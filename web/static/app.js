@@ -283,10 +283,12 @@ function ingredientModal(editTarget) {
 function statsPage() {
     return {
         ingredients: [],
+        selected: null,
         _chart: null,
 
         async init() {
             this.ingredients = await api('/api/ingredients') || [];
+            await this.$nextTick();
             this._renderChart();
         },
 
@@ -337,11 +339,15 @@ function statsPage() {
                             label: ctx => {
                                 const ing = sorted[ctx.dataIndex];
                                 if (ing.unit_type === 'weight' && ing.weight_per_cube) {
-                                    return ` ${ctx.raw}개 · ${ctx.raw * ing.weight_per_cube}g`;
+                                    return ` ${ctx.raw}개 남음 · 큐브당 ${ing.weight_per_cube}g`;
                                 }
-                                return ` ${ctx.raw}개`;
+                                return ` ${ctx.raw}개 남음`;
                             },
                         }},
+                    },
+                    onClick: (evt, elements) => {
+                        if (!elements.length) { this.selected = null; return; }
+                        this.selected = sorted[elements[0].index];
                     },
                     scales: {
                         x: {

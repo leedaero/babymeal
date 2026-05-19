@@ -530,6 +530,38 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   padding: 1.25rem;
 }
 .chart-title { font-size: .875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; }
+.ing-detail-card {
+  margin-top: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .875rem 1rem;
+}
+.ing-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: .95rem;
+  margin-bottom: .625rem;
+}
+.ing-detail-close {
+  background: none;
+  border: none;
+  font-size: .85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 .25rem;
+}
+.ing-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .875rem;
+  padding: .3rem 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.ing-detail-row span { color: var(--text-muted); }
 
 .ing-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
 .ing-row-emoji { font-size: 1.2rem; width: 28px; flex-shrink: 0; }
