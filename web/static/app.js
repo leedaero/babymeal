@@ -92,8 +92,8 @@ function inventoryPage() {
         },
 
         historyLabel(log) {
-            const icons  = { created: '🆕', fed: '🍼', replenished: '🔁' };
-            const labels = { created: '제작', fed: '먹힘', replenished: '보충' };
+            const icons  = { created: '🆕', fed: '🍼', replenished: '🔁', edited: '✏️' };
+            const labels = { created: '제작', fed: '먹힘', replenished: '보충', edited: '수정' };
             return `${icons[log.event_type] || '•'} ${labels[log.event_type] || log.event_type}`;
         },
     };

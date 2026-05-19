@@ -553,13 +553,19 @@ def create_app(config=None):
         d = {k: v for k, v in d.items() if k in UPDATABLE_FIELDS}
         if not d:
             return jsonify({'error': 'no valid fields'}), 400
+        cur.execute('SELECT total_cubes, name FROM ingredients WHERE id=%s AND user_id=%s',
+                    (ing_id, get_view_user_id()))
+        before = cur.fetchone()
         if 'total_cubes' in d:
             d['current_cubes'] = d['total_cubes']
         sets = ', '.join(f'{k}=%({k})s' for k in d)
         cur.execute(f'UPDATE ingredients SET {sets} WHERE id=%(id)s AND user_id=%(uid)s',
                     {**d, 'id': ing_id, 'uid': get_view_user_id()})
-        if 'total_cubes' in d:
+        META_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'unit_type'}
+        if 'total_cubes' in d and before and d['total_cubes'] != before['total_cubes']:
             _log_ingredient_event(conn, ing_id, get_view_user_id(), 'replenished', d['total_cubes'])
+        elif d.keys() & META_FIELDS:
+            _log_ingredient_event(conn, ing_id, get_view_user_id(), 'edited', 0)
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = dict(cur.fetchone())
