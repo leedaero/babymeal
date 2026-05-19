@@ -399,6 +399,20 @@ function schedulePage() {
             ]);
         },
 
+        // 베이스 → 소고기·닭고기·대구살 → 나머지 가나다 순
+        // 차후 category 필드 추가 시 이 함수만 교체하면 됨
+        get sortedIngredients() {
+            const PINNED = ['소고기', '닭고기', '대구살'];
+            return [...this.ingredients].sort((a, b) => {
+                const rank = n => n.includes('베이스') ? 0
+                    : PINNED.indexOf(n) !== -1 ? PINNED.indexOf(n) + 1
+                    : PINNED.length + 1;
+                const ra = rank(a.name), rb = rank(b.name);
+                if (ra !== rb) return ra - rb;
+                return a.name.localeCompare(b.name, 'ko');
+            });
+        },
+
         get viewYear()  { return this.viewDate.getFullYear(); },
         get viewMonth() { return this.viewDate.getMonth(); },
         get viewMonthLabel() { return `${this.viewYear}년 ${this.viewMonth + 1}월`; },

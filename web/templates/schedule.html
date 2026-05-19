@@ -112,7 +112,7 @@
   <!-- 식단 수정 모달 -->
   <template x-if="showEditModal && editMealData">
     <div class="modal-overlay" @click.self="showEditModal=false">
-      <div class="modal-box" x-data="editMealModal(editMealData, ingredients)">
+      <div class="modal-box" x-data="editMealModal(editMealData, sortedIngredients)">
         <p class="modal-title">식단 수정</p>
         <div class="form-row">
           <div class="form-group">
@@ -159,7 +159,7 @@
   <!-- 식단 만들기 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">
-      <div class="modal-box" x-data="mealModal(addDefaultDate, addDefaultMealTime, ingredients)">
+      <div class="modal-box" x-data="mealModal(addDefaultDate, addDefaultMealTime, sortedIngredients)">
         <p class="modal-title">식단 만들기</p>
         <div class="form-row">
           <div class="form-group">
