@@ -289,7 +289,7 @@ function statsPage() {
         async init() {
             this.ingredients = await api('/api/ingredients') || [];
             await this.$nextTick();
-            this._renderChart();
+            requestAnimationFrame(() => this._renderChart());
         },
 
         get totalCubes() {
@@ -303,7 +303,9 @@ function statsPage() {
         _renderChart() {
             const canvas = document.getElementById('stockChart');
             if (!canvas || !this.ingredients.length) return;
-            if (this._chart) this._chart.destroy();
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            if (this._chart) { try { this._chart.destroy(); } catch(_) {} this._chart = null; }
 
             const sorted = [...this.ingredients].sort((a, b) => b.current_cubes - a.current_cubes);
             const isLow     = i => i.current_cubes <= 3;
@@ -317,7 +319,7 @@ function statsPage() {
                 return `${i.emoji} ${i.name}${grams}`;
             };
 
-            this._chart = new Chart(canvas, {
+            this._chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: sorted.map(i => labelFor(i)),
