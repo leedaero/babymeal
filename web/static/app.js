@@ -444,14 +444,17 @@ function schedulePage() {
             ]);
         },
 
-        // 베이스 → 소고기·닭고기·대구살 → 나머지 가나다 순
+        // 베이스 → "소"로 시작 → "닭"으로 시작 → 대구살 → 나머지 가나다 순
         // 차후 category 필드 추가 시 이 함수만 교체하면 됨
         get sortedIngredients() {
-            const PINNED = ['소고기', '닭고기', '대구살'];
+            const rank = n => {
+                if (n.includes('베이스')) return 0;
+                if (n.startsWith('소'))   return 1;
+                if (n.startsWith('닭'))   return 2;
+                if (n === '대구살')        return 3;
+                return 4;
+            };
             return [...this.ingredients].sort((a, b) => {
-                const rank = n => n.includes('베이스') ? 0
-                    : PINNED.indexOf(n) !== -1 ? PINNED.indexOf(n) + 1
-                    : PINNED.length + 1;
                 const ra = rank(a.name), rb = rank(b.name);
                 if (ra !== rb) return ra - rb;
                 return a.name.localeCompare(b.name, 'ko');
