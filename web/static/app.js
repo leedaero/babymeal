@@ -983,7 +983,7 @@ function settingsPage() {
         async testPush() {
             this.notifyMsg = '';
             const r = await api('/api/push/test', { method: 'POST' });
-            if (r?.ok) { this.notifyOk = true;  this.notifyMsg = '푸시 전송 완료 📲'; }
+            if (r?.ok) { this.notifyOk = true;  this.notifyMsg = `푸시 전송 완료 📲 (${r.sub_count}개 기기)`; }
             else        { this.notifyOk = false; this.notifyMsg = '푸시 실패: ' + (r?.error || '알 수 없는 오류'); }
             setTimeout(() => this.notifyMsg = '', 8000);
         },
