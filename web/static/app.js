@@ -1074,12 +1074,20 @@ function appSettingsPage() {
         },
 
         async subscribePush() {
-            if (!('serviceWorker' in navigator)) return;
+            if (!('serviceWorker' in navigator)) {
+                this.pushStatus = '이 브라우저는 푸시 알림을 지원하지 않습니다';
+                return;
+            }
+            this.pushStatus = '구독 중...';
             try {
-                const { publicKey } = await api('/api/push/vapid-public-key') || {};
-                if (!publicKey) return;
-                const reg = await navigator.serviceWorker.ready;
-                const rawKey = Uint8Array.from(atob(publicKey.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+                const res = await api('/api/push/vapid-public-key') || {};
+                if (!res.publicKey) {
+                    this.pushStatus = '서버 설정 오류 — 관리자에게 문의하세요';
+                    return;
+                }
+                const timeout = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000));
+                const reg = await Promise.race([navigator.serviceWorker.ready, timeout]);
+                const rawKey = Uint8Array.from(atob(res.publicKey.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
                 const sub = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: rawKey,
@@ -1089,7 +1097,13 @@ function appSettingsPage() {
                 this.pushSubscribed = true;
                 this.pushStatus = '이 기기에서 알림을 받고 있습니다';
             } catch (e) {
-                this.pushStatus = '구독 실패: ' + (e.message || e);
+                if (e.message === 'timeout') {
+                    this.pushStatus = '홈 화면에 추가 후 사용해주세요 (iOS 16.4+)';
+                } else if (e.name === 'NotAllowedError') {
+                    this.pushStatus = '알림이 차단되어 있습니다 — Safari 설정에서 허용해주세요';
+                } else {
+                    this.pushStatus = '구독 실패: ' + (e.message || e);
+                }
             }
         },
 
