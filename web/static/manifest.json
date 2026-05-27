@@ -1,0 +1,12 @@
+{
+  "name": "치밀한 이유식",
+  "short_name": "이유식",
+  "description": "우리 아기 이유식 큐브 관리",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4BA3E3",
+  "icons": [
+    { "src": "/static/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

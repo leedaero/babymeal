@@ -1007,6 +1007,95 @@ def create_app(config=None):
         _reschedule_notification(enabled, hour, minute)
         return jsonify({'ok': True, 'enabled': enabled, 'notify_hour': hour, 'notify_minute': minute, 'notify_threshold': threshold})
 
+    # ─── 웹 푸시 ──────────────────────────────────────────────
+
+    def _ensure_push_table(conn):
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              user_id INT NOT NULL,
+              endpoint TEXT NOT NULL,
+              p256dh VARCHAR(512) NOT NULL,
+              auth VARCHAR(255) NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE KEY uq_endpoint (endpoint(500)),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+        conn.commit()
+
+    @app.get('/api/push/vapid-public-key')
+    @login_required
+    def api_push_vapid_key():
+        cfg = _db.load_config()
+        return jsonify({'publicKey': cfg.get('vapid', {}).get('public_key', '')})
+
+    @app.post('/api/push/subscribe')
+    @login_required
+    def api_push_subscribe():
+        sub = request.get_json() or {}
+        endpoint = sub.get('endpoint', '')
+        p256dh   = (sub.get('keys') or {}).get('p256dh', '')
+        auth     = (sub.get('keys') or {}).get('auth', '')
+        if not endpoint or not p256dh or not auth:
+            return jsonify({'error': 'invalid subscription'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        _ensure_push_table(conn)
+        cur.execute("""
+            INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE user_id=%s, p256dh=%s, auth=%s
+        """, (get_view_user_id(), endpoint, p256dh, auth,
+              get_view_user_id(), p256dh, auth))
+        conn.commit()
+        return jsonify({'ok': True})
+
+    @app.delete('/api/push/subscribe')
+    @login_required
+    def api_push_unsubscribe():
+        sub = request.get_json() or {}
+        endpoint = sub.get('endpoint', '')
+        if not endpoint:
+            return jsonify({'error': 'missing endpoint'}), 400
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM push_subscriptions WHERE endpoint=%s AND user_id=%s',
+                    (endpoint, get_view_user_id()))
+        conn.commit()
+        return jsonify({'ok': True})
+
+    def _send_web_push_to_all(title, body, url='/'):
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            return
+        cfg = _db.load_config()
+        vapid = cfg.get('vapid', {})
+        if not vapid.get('private_key'):
+            return
+        conn = _db.get_connection()
+        try:
+            _ensure_push_table(conn)
+            cur = conn.cursor()
+            cur.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions')
+            subs = cur.fetchall()
+        finally:
+            conn.close()
+        data = json.dumps({'title': title, 'body': body, 'url': url})
+        for s in subs:
+            try:
+                webpush(
+                    subscription_info={'endpoint': s['endpoint'],
+                                       'keys': {'p256dh': s['p256dh'], 'auth': s['auth']}},
+                    data=data,
+                    vapid_private_key=vapid['private_key'],
+                    vapid_claims={'sub': vapid.get('mailto', 'mailto:admin@example.com')},
+                )
+            except Exception as e:
+                logging.warning('웹 푸시 실패 (%s): %s', s['endpoint'][:40], e)
+
     # ─── APScheduler ─────────────────────────────────────────
 
     def _send_realtime_alert(ing, username=''):
@@ -1078,16 +1167,20 @@ def create_app(config=None):
         lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
         message = "\n".join(lines)
 
-        try:
-            payload = json.dumps({"content": message}).encode("utf-8")
-            req = urllib.request.Request(
-                webhook, data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"}, method="POST",
-            )
-            urllib.request.urlopen(req, timeout=10)
-            logging.info("Discord 재고 부족 알림 전송 완료 (%d개 항목)", len(items))
-        except Exception as e:
-            logging.warning("Discord 알림 실패: %s", e)
+        if webhook:
+            try:
+                payload = json.dumps({"content": message}).encode("utf-8")
+                req = urllib.request.Request(
+                    webhook, data=payload,
+                    headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"}, method="POST",
+                )
+                urllib.request.urlopen(req, timeout=10)
+                logging.info("Discord 재고 부족 알림 전송 완료 (%d개 항목)", len(items))
+            except Exception as e:
+                logging.warning("Discord 알림 실패: %s", e)
+
+        names = ', '.join(f"{i['emoji']}{i['name']}({i['current_cubes']}개)" for i in items)
+        _send_web_push_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요", '/inventory')
 
     if not app.config.get('TESTING'):  # noqa: SIM102
         try:
