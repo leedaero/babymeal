@@ -1,3 +1,6 @@
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+
 self.addEventListener('push', event => {
   let title = '치밀한 이유식';
   let body  = '';
