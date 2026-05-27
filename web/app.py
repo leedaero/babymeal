@@ -974,16 +974,17 @@ def create_app(config=None):
         try:
             _ensure_push_table(conn)
             cur = conn.cursor()
-            cur.execute('SELECT COUNT(*) as cnt FROM push_subscriptions')
-            cnt = (cur.fetchone() or {}).get('cnt', 0)
+            cur.execute('SELECT endpoint FROM push_subscriptions')
+            subs = cur.fetchall()
         finally:
             conn.close()
-        if cnt == 0:
+        if not subs:
             return jsonify({'ok': False, 'error': '등록된 구독이 없습니다 — 앱설정에서 알림 허용을 먼저 해주세요'}), 400
+        endpoints = [s['endpoint'][:60] for s in subs]
         errors = _send_web_push_to_all('🍼 푸시 테스트', '치밀한 이유식 푸시 알림이 정상 작동합니다 ✅', '/')
         if errors:
-            return jsonify({'ok': False, 'error': errors[0], 'sub_count': cnt}), 500
-        return jsonify({'ok': True, 'sub_count': cnt})
+            return jsonify({'ok': False, 'error': errors[0], 'sub_count': len(subs), 'endpoints': endpoints}), 500
+        return jsonify({'ok': True, 'sub_count': len(subs), 'endpoints': endpoints})
 
     @app.post('/api/notification-settings/run')
     @admin_required
@@ -1174,14 +1175,16 @@ def create_app(config=None):
                     ttl=86400,
                     content_encoding='aes128gcm',
                 )
-                status = getattr(resp, 'status_code', '?')
-                body   = getattr(resp, 'text', '')[:200] if resp else ''
-                if str(status) in ('200', '201', ''):
-                    logging.info('웹 푸시 전송 성공: %s (HTTP %s)', s['endpoint'][:40], status)
-                else:
+                status = getattr(resp, 'status_code', None)
+                body   = getattr(resp, 'text', '')[:300] if resp else ''
+                logging.info('웹 푸시 응답: endpoint=%s status=%s body=%s',
+                             s['endpoint'][:50], status, body[:100])
+                if status and status not in (200, 201):
                     err = f'HTTP {status}: {body}'
-                    logging.warning('웹 푸시 비정상 응답 (%s): %s', s['endpoint'][:40], err)
+                    logging.warning('웹 푸시 비정상 응답: %s', err)
                     errors.append(err)
+                else:
+                    logging.info('웹 푸시 전송 성공: %s', s['endpoint'][:50])
             except Exception as e:
                 err = str(e)
                 logging.warning('웹 푸시 실패 (%s): %s', s['endpoint'][:40], err)
