@@ -967,6 +967,46 @@ def create_app(config=None):
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
 
+    @app.get('/api/push/curl')
+    @admin_required
+    def api_push_curl():
+        """pywebpush curl=True로 실제 curl 커맨드 생성 — Apple 응답 직접 확인용"""
+        try:
+            from pywebpush import webpush
+        except ImportError:
+            return jsonify({'error': 'pywebpush 미설치'}), 500
+        row = _get_notification_settings_row()
+        vapid = {'private_key': row.get('vapid_private_key',''), 'mailto': row.get('vapid_mailto','')}
+        if not vapid['private_key']:
+            return jsonify({'error': 'VAPID 키 없음'}), 400
+        conn = _db.get_connection()
+        try:
+            _ensure_push_table(conn)
+            cur = conn.cursor()
+            cur.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions LIMIT 1')
+            s = cur.fetchone()
+        finally:
+            conn.close()
+        if not s:
+            return jsonify({'error': '구독 없음'}), 400
+        import subprocess, shlex
+        try:
+            curl_cmd = webpush(
+                subscription_info={'endpoint': s['endpoint'],
+                                   'keys': {'p256dh': s['p256dh'], 'auth': s['auth']}},
+                data=json.dumps({'title':'curl테스트','body':'Apple 응답 확인용','url':'/'}),
+                vapid_private_key=vapid['private_key'],
+                vapid_claims={'sub': vapid['mailto'] or 'mailto:admin@example.com'},
+                ttl=60, content_encoding='aes128gcm', curl=True,
+            )
+            result = subprocess.run(curl_cmd + ['-v'], capture_output=True, text=True, timeout=15)
+            return jsonify({'cmd': ' '.join(shlex.quote(c) for c in curl_cmd),
+                            'stdout': result.stdout[:2000],
+                            'stderr': result.stderr[:2000],
+                            'returncode': result.returncode})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.post('/api/push/test')
     @admin_required
     def api_push_test():
