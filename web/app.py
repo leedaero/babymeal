@@ -1247,28 +1247,30 @@ def create_app(config=None):
                 conn.close()
         except Exception:
             threshold = 3; webhook = ''
-        if not webhook:
-            return
         if ing['current_cubes'] > threshold:
             return
         bar = "▓" * ing['current_cubes'] + "░" * max(0, threshold - ing['current_cubes'])
         who = f" (by **{username}**)" if username else ""
-        message = (
-            f"⚠️ **재고 부족** — 치밀한 이유식{who}\n"
-            f"{ing['emoji']} **{ing['name']}** — {ing['current_cubes']}개 남음  `{bar}`\n"
-            f"> 재고 탭에서 큐브를 보충해주세요 🍼"
-        )
-        try:
-            payload = json.dumps({"content": message}).encode("utf-8")
-            req = urllib.request.Request(
-                webhook, data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"},
-                method="POST",
+        if webhook:
+            message = (
+                f"⚠️ **재고 부족** — 치밀한 이유식{who}\n"
+                f"{ing['emoji']} **{ing['name']}** — {ing['current_cubes']}개 남음  `{bar}`\n"
+                f"> 재고 탭에서 큐브를 보충해주세요 🍼"
             )
-            urllib.request.urlopen(req, timeout=10)
-            logging.info("Discord 실시간 재고 부족 알림: %s (%d개)", ing['name'], ing['current_cubes'])
-        except Exception as e:
-            logging.warning("Discord 실시간 알림 실패: %s", e)
+            try:
+                payload = json.dumps({"content": message}).encode("utf-8")
+                req = urllib.request.Request(
+                    webhook, data=payload,
+                    headers={"Content-Type": "application/json", "User-Agent": "DiscordBot (babymeal, 1.0)"},
+                    method="POST",
+                )
+                urllib.request.urlopen(req, timeout=10)
+                logging.info("Discord 실시간 재고 부족 알림: %s (%d개)", ing['name'], ing['current_cubes'])
+            except Exception as e:
+                logging.warning("Discord 실시간 알림 실패: %s", e)
+        push_title = f"⚠️ 재고 부족{' — ' + username if username else ''}"
+        push_body  = f"{ing['emoji']} {ing['name']} {ing['current_cubes']}개 남음 — 보충해주세요"
+        _send_web_push_to_all(push_title, push_body, '/')
 
     def _send_low_stock_notification():
         logging.info("재고 부족 알림 스케줄 실행")
