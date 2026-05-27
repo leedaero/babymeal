@@ -12,7 +12,6 @@ services:
       RUNNER_NAME: babymeal-runner
       RUNNER_WORKDIR: /volume1/DR_DATA1/babyMeal
       EPHEMERAL: "false"
-      DISABLE_AUTO_UPDATE: "true"
     volumes:
       - /volume1/DR_DATA1/babyMeal:/volume1/DR_DATA1/babyMeal
       - /var/run/docker.sock:/var/run/docker.sock
