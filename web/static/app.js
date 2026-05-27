@@ -446,19 +446,25 @@ function schedulePage() {
 
         // 베이스 → "소"로 시작 → "닭"으로 시작 → 대구살 → 나머지 가나다 순
         // 차후 category 필드 추가 시 이 함수만 교체하면 됨
-        get sortedIngredients() {
-            const rank = n => {
-                if (n.includes('베이스')) return 0;
-                if (n.startsWith('소'))   return 1;
-                if (n.startsWith('닭'))   return 2;
-                if (n === '대구살')        return 3;
-                return 4;
-            };
-            return [...this.ingredients].filter(i => i.current_cubes > 0).sort((a, b) => {
-                const ra = rank(a.name), rb = rank(b.name);
+        _ingRank(n) {
+            if (n.includes('베이스')) return 0;
+            if (n.startsWith('소'))   return 1;
+            if (n.startsWith('닭'))   return 2;
+            if (n === '대구살')        return 3;
+            return 4;
+        },
+        _sortIngs(arr) {
+            return [...arr].sort((a, b) => {
+                const ra = this._ingRank(a.name), rb = this._ingRank(b.name);
                 if (ra !== rb) return ra - rb;
                 return a.name.localeCompare(b.name, 'ko');
             });
+        },
+        get sortedIngredients() {
+            return this._sortIngs(this.ingredients.filter(i => i.current_cubes > 0));
+        },
+        sortedMealIngredients(meal) {
+            return this._sortIngs(meal.ingredients || []);
         },
 
         get viewYear()  { return this.viewDate.getFullYear(); },

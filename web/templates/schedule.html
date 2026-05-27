@@ -68,7 +68,7 @@
               <span style="font-size:.82rem;font-weight:600;color:var(--text-secondary);">전체 선택</span>
             </div>
           </template>
-          <template x-for="mi in (selectedMeal.ingredients || [])" :key="mi.ingredient_id">
+          <template x-for="mi in sortedMealIngredients(selectedMeal)" :key="mi.ingredient_id">
             <div class="ing-row" style="cursor:pointer;" @click="toggleCheck(mi.ingredient_id)">
               <input type="checkbox" :checked="isChecked(mi.ingredient_id)"
                      style="width:16px;height:16px;cursor:pointer;flex-shrink:0;"
