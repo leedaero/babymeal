@@ -1184,7 +1184,7 @@ def create_app(config=None):
             from pywebpush import webpush, WebPushException
         except ImportError:
             logging.warning('pywebpush 미설치 — 웹 푸시 불가')
-            return []
+            return ['pywebpush 미설치 — NAS에서 pip3 install pywebpush 실행 필요']
         row = _get_notification_settings_row()
         vapid = {
             'private_key': row.get('vapid_private_key', ''),
