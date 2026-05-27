@@ -212,6 +212,15 @@ def create_app(config=None):
         session.clear()
         return redirect(url_for('login_page'))
 
+    @app.route('/sw.js')
+    def service_worker():
+        from flask import send_from_directory
+        resp = send_from_directory(app.static_folder, 'sw.js',
+                                   mimetype='application/javascript')
+        resp.headers['Service-Worker-Allowed'] = '/'
+        resp.headers['Cache-Control'] = 'no-store'
+        return resp
+
     @app.route('/')
     @login_required
     def inventory_page():
@@ -302,6 +311,11 @@ def create_app(config=None):
     @admin_required
     def settings_page():
         return render_template('settings.html', **_page_ctx())
+
+    @app.route('/app-settings')
+    @login_required
+    def app_settings_page():
+        return render_template('app_settings.html', **_page_ctx())
 
     # ─── 자동 차감 ────────────────────────────────────────
 

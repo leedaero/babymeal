@@ -95,22 +95,6 @@
     </div>
   </div>
 
-  <!-- 푸시 알림 -->
-  <div style="margin-top:2rem;">
-    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">📲 푸시 알림</h2>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <p style="font-size:.875rem;font-weight:600;">이 기기에서 알림 받기</p>
-          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;" x-text="pushStatus"></p>
-        </div>
-        <button class="btn btn-sm" :class="pushSubscribed ? 'btn-green' : 'btn-blue'"
-                @click="togglePush()"
-                x-text="pushSubscribed ? '🔔 구독 중' : '🔕 알림 허용'"></button>
-      </div>
-    </div>
-  </div>
-
   <!-- 계정 추가 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">

@@ -11,7 +11,7 @@
   <meta name="theme-color"              content="#4BA3E3">
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
     }
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
@@ -47,6 +47,9 @@
       </a>
       <a href="/allergy" class="tab-btn {% if active_tab == 'allergy' %}active{% endif %}">
         <span class="sidebar-icon">🧪</span><span class="sidebar-text">알러지 테스트</span>
+      </a>
+      <a href="/app-settings" class="tab-btn {% if active_tab == 'app_settings' %}active{% endif %}">
+        <span class="sidebar-icon">📲</span><span class="sidebar-text">앱설정</span>
       </a>
       {% if is_admin %}
       <a href="/settings" class="tab-btn {% if active_tab == 'settings'  %}active{% endif %}">

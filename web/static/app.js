@@ -950,78 +950,8 @@ function settingsPage() {
         notifyMsg: '',
         notifyOk: true,
 
-        pushSubscribed: false,
-        pushStatus: '로딩 중...',
-        _pushSub: null,
-
         async init() {
-            await Promise.all([this.load(), this.loadNotify(), this.initPush()]);
-        },
-
-        async initPush() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                this.pushStatus = '이 브라우저는 푸시 알림을 지원하지 않습니다';
-                return;
-            }
-            const perm = Notification.permission;
-            if (perm === 'denied') {
-                this.pushStatus = '알림이 차단되어 있습니다 — Safari 설정에서 허용해주세요';
-                return;
-            }
-            try {
-                const reg = await navigator.serviceWorker.ready;
-                const sub = await reg.pushManager.getSubscription();
-                if (sub) {
-                    this._pushSub = sub;
-                    this.pushSubscribed = true;
-                    this.pushStatus = '이 기기에서 알림을 받고 있습니다';
-                } else {
-                    this.pushStatus = '알림 허용 버튼을 눌러 구독하세요';
-                }
-            } catch (e) {
-                this.pushStatus = '서비스 워커 준비 중...';
-            }
-        },
-
-        async togglePush() {
-            if (this.pushSubscribed) {
-                await this.unsubscribePush();
-            } else {
-                await this.subscribePush();
-            }
-        },
-
-        async subscribePush() {
-            if (!('serviceWorker' in navigator)) return;
-            try {
-                const { publicKey } = await api('/api/push/vapid-public-key') || {};
-                if (!publicKey) return;
-                const reg = await navigator.serviceWorker.ready;
-                const rawKey = Uint8Array.from(atob(publicKey.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
-                const sub = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: rawKey,
-                });
-                await api('/api/push/subscribe', { method: 'POST', body: sub.toJSON() });
-                this._pushSub = sub;
-                this.pushSubscribed = true;
-                this.pushStatus = '이 기기에서 알림을 받고 있습니다';
-            } catch (e) {
-                this.pushStatus = '구독 실패: ' + (e.message || e);
-            }
-        },
-
-        async unsubscribePush() {
-            if (!this._pushSub) return;
-            try {
-                await api('/api/push/subscribe', { method: 'DELETE', body: { endpoint: this._pushSub.endpoint } });
-                await this._pushSub.unsubscribe();
-                this._pushSub = null;
-                this.pushSubscribed = false;
-                this.pushStatus = '알림 허용 버튼을 눌러 구독하세요';
-            } catch (e) {
-                this.pushStatus = '구독 취소 실패: ' + (e.message || e);
-            }
+            await Promise.all([this.load(), this.loadNotify()]);
         },
 
         async load() {
@@ -1093,6 +1023,87 @@ function settingsPage() {
             if (!confirm(`'${u.username}' 계정을 삭제할까요?`)) return;
             const res = await api(`/api/users/${u.id}`, { method: 'DELETE' });
             if (res?.ok) await this.load();
+        },
+    };
+}
+
+// ─── 앱설정 (모든 사용자) ───
+function appSettingsPage() {
+    return {
+        pushSubscribed: false,
+        pushStatus: '로딩 중...',
+        _pushSub: null,
+
+        async init() {
+            await this.initPush();
+        },
+
+        async initPush() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                this.pushStatus = '이 브라우저는 푸시 알림을 지원하지 않습니다';
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                this.pushStatus = '알림이 차단되어 있습니다 — Safari 설정에서 허용해주세요';
+                return;
+            }
+            try {
+                const timeout = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000));
+                const reg = await Promise.race([navigator.serviceWorker.ready, timeout]);
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    this._pushSub = sub;
+                    this.pushSubscribed = true;
+                    this.pushStatus = '이 기기에서 알림을 받고 있습니다';
+                } else {
+                    this.pushStatus = '알림 허용 버튼을 눌러 구독하세요';
+                }
+            } catch (e) {
+                this.pushStatus = e.message === 'timeout'
+                    ? '홈 화면에 추가 후 사용해주세요 (iOS 16.4+)'
+                    : '알림 허용 버튼을 눌러 구독하세요';
+            }
+        },
+
+        async togglePush() {
+            if (this.pushSubscribed) {
+                await this.unsubscribePush();
+            } else {
+                await this.subscribePush();
+            }
+        },
+
+        async subscribePush() {
+            if (!('serviceWorker' in navigator)) return;
+            try {
+                const { publicKey } = await api('/api/push/vapid-public-key') || {};
+                if (!publicKey) return;
+                const reg = await navigator.serviceWorker.ready;
+                const rawKey = Uint8Array.from(atob(publicKey.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: rawKey,
+                });
+                await api('/api/push/subscribe', { method: 'POST', body: sub.toJSON() });
+                this._pushSub = sub;
+                this.pushSubscribed = true;
+                this.pushStatus = '이 기기에서 알림을 받고 있습니다';
+            } catch (e) {
+                this.pushStatus = '구독 실패: ' + (e.message || e);
+            }
+        },
+
+        async unsubscribePush() {
+            if (!this._pushSub) return;
+            try {
+                await api('/api/push/subscribe', { method: 'DELETE', body: { endpoint: this._pushSub.endpoint } });
+                await this._pushSub.unsubscribe();
+                this._pushSub = null;
+                this.pushSubscribed = false;
+                this.pushStatus = '알림 허용 버튼을 눌러 구독하세요';
+            } catch (e) {
+                this.pushStatus = '구독 취소 실패: ' + (e.message || e);
+            }
         },
     };
 }
