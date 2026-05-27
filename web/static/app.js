@@ -985,12 +985,14 @@ function settingsPage() {
             const r = await api('/api/notification-settings/run', { method: 'POST' });
             if (r?.ok) {
                 this.notifyOk = true;
-                this.notifyMsg = r.sent ? `발송 완료 (${r.count}개 항목) 📨` : '재고 부족 항목 없음 ✅';
+                let msg = r.sent ? `Discord+푸시 발송 완료 (${r.count}개 항목) 📨` : '재고 부족 항목 없음 ✅';
+                if (r.push_error) msg += ` | 푸시 오류: ${r.push_error}`;
+                this.notifyMsg = msg;
             } else {
                 this.notifyOk = false;
                 this.notifyMsg = r?.error || '실행 실패';
             }
-            setTimeout(() => this.notifyMsg = '', 4000);
+            setTimeout(() => this.notifyMsg = '', 8000);
         },
 
         closeModal() {

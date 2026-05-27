@@ -988,7 +988,12 @@ def create_app(config=None):
             return jsonify({'error': f'Discord {e.code}: {body or e.reason}'}), 500
         except Exception as e:
             return jsonify({'error': f'전송 실패: {e}'}), 500
-        return jsonify({'ok': True, 'sent': True, 'count': len(items)})
+        names = ', '.join(f"{i['emoji']}{i['name']}({i['current_cubes']}개)" for i in items)
+        push_errors = _send_web_push_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요", '/inventory')
+        result = {'ok': True, 'sent': True, 'count': len(items)}
+        if push_errors:
+            result['push_error'] = push_errors[0]
+        return jsonify(result)
 
     @app.put('/api/notification-settings')
     @admin_required
@@ -1084,11 +1089,13 @@ def create_app(config=None):
         try:
             from pywebpush import webpush, WebPushException
         except ImportError:
-            return
+            logging.warning('pywebpush 미설치 — 웹 푸시 불가')
+            return []
         cfg = _db.load_config()
         vapid = cfg.get('vapid', {})
         if not vapid.get('private_key'):
-            return
+            logging.warning('VAPID private_key 미설정 — 웹 푸시 불가')
+            return []
         conn = _db.get_connection()
         try:
             _ensure_push_table(conn)
@@ -1098,6 +1105,7 @@ def create_app(config=None):
         finally:
             conn.close()
         data = json.dumps({'title': title, 'body': body, 'url': url})
+        errors = []
         for s in subs:
             try:
                 webpush(
@@ -1106,9 +1114,14 @@ def create_app(config=None):
                     data=data,
                     vapid_private_key=vapid['private_key'],
                     vapid_claims={'sub': vapid.get('mailto', 'mailto:admin@example.com')},
+                    ttl=86400,
                 )
+                logging.info('웹 푸시 전송 성공: %s', s['endpoint'][:40])
             except Exception as e:
-                logging.warning('웹 푸시 실패 (%s): %s', s['endpoint'][:40], e)
+                err = str(e)
+                logging.warning('웹 푸시 실패 (%s): %s', s['endpoint'][:40], err)
+                errors.append(err)
+        return errors
 
     # ─── APScheduler ─────────────────────────────────────────
 
