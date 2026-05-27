@@ -603,6 +603,21 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
             { value:'tried',         label:'알러지 테스트' },
         ],
         ingredients,
+        npIng: null,
+        npStr: '0',
+
+        openNp(ing) { this.npIng = ing; this.npStr = String(this.cubes[ing.id] || 0); },
+        npPress(n) {
+            const s = this.npStr === '0' ? String(n) : this.npStr + String(n);
+            if (parseInt(s) > 99) return;
+            this.npStr = s;
+            this.cubes[this.npIng.id] = parseInt(this.npStr) || 0;
+        },
+        npBack() {
+            this.npStr = this.npStr.length <= 1 ? '0' : this.npStr.slice(0, -1);
+            this.cubes[this.npIng.id] = parseInt(this.npStr) || 0;
+        },
+        closeNp() { this.npIng = null; },
 
         get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
 
@@ -648,6 +663,21 @@ function editMealModal(meal, ingredients) {
             { value:'tried',         label:'알러지 테스트' },
         ],
         ingredients,
+        npIng: null,
+        npStr: '0',
+
+        openNp(ing) { this.npIng = ing; this.npStr = String(this.cubes[ing.id] || 0); },
+        npPress(n) {
+            const s = this.npStr === '0' ? String(n) : this.npStr + String(n);
+            if (parseInt(s) > 99) return;
+            this.npStr = s;
+            this.cubes[this.npIng.id] = parseInt(this.npStr) || 0;
+        },
+        npBack() {
+            this.npStr = this.npStr.length <= 1 ? '0' : this.npStr.slice(0, -1);
+            this.cubes[this.npIng.id] = parseInt(this.npStr) || 0;
+        },
+        closeNp() { this.npIng = null; },
 
         get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
 

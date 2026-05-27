@@ -141,9 +141,8 @@
               <span class="ing-row-name"  x-text="ing.name"></span>
               <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
                     x-text="ing.unit_type==='quantity' ? '' : `1큐브=${ing.weight_per_cube}g`"></span>
-              <input class="ing-row-input" type="number" min="0" placeholder="0"
-                     :value="cubes[ing.id]||''"
-                     @input="cubes[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-tap" :class="cubes[ing.id]>0&&'tap-active'"
+                    @click="openNp(ing)" x-text="cubes[ing.id]||'0'"></span>
               <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : '큐브'"></span>
             </div>
           </template>
@@ -152,6 +151,30 @@
           <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">저장하기</button>
         </div>
+        <template x-if="npIng">
+          <div class="numpad-overlay" @click.self="closeNp()">
+            <div class="numpad-box">
+              <div class="numpad-header">
+                <span x-text="npIng.emoji + ' ' + npIng.name"></span>
+                <span class="numpad-display" x-text="npStr + (npIng.unit_type==='quantity' ? '개' : '큐브')"></span>
+              </div>
+              <div class="numpad-grid">
+                <button class="numpad-btn" type="button" @click="npPress(1)">1</button>
+                <button class="numpad-btn" type="button" @click="npPress(2)">2</button>
+                <button class="numpad-btn" type="button" @click="npPress(3)">3</button>
+                <button class="numpad-btn" type="button" @click="npPress(4)">4</button>
+                <button class="numpad-btn" type="button" @click="npPress(5)">5</button>
+                <button class="numpad-btn" type="button" @click="npPress(6)">6</button>
+                <button class="numpad-btn" type="button" @click="npPress(7)">7</button>
+                <button class="numpad-btn" type="button" @click="npPress(8)">8</button>
+                <button class="numpad-btn" type="button" @click="npPress(9)">9</button>
+                <button class="numpad-btn numpad-back" type="button" @click="npBack()">⌫</button>
+                <button class="numpad-btn" type="button" @click="npPress(0)">0</button>
+                <button class="numpad-btn numpad-done" type="button" @click="closeNp()">완료</button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </template>
@@ -188,9 +211,8 @@
               <span class="ing-row-name"  x-text="ing.name"></span>
               <span style="font-size:.7rem;color:var(--text-muted);margin-right:.1rem;"
                     x-text="ing.unit_type==='quantity' ? '' : `1큐브=${ing.weight_per_cube}g`"></span>
-              <input class="ing-row-input" type="number" min="0" placeholder="0"
-                     :value="cubes[ing.id]||''"
-                     @input="cubes[ing.id]=parseInt($event.target.value)||0">
+              <span class="ing-row-tap" :class="cubes[ing.id]>0&&'tap-active'"
+                    @click="openNp(ing)" x-text="cubes[ing.id]||'0'"></span>
               <span class="ing-row-unit" x-text="ing.unit_type==='quantity' ? '개' : '큐브'"></span>
             </div>
           </template>
@@ -199,6 +221,30 @@
           <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">추가하기</button>
         </div>
+        <template x-if="npIng">
+          <div class="numpad-overlay" @click.self="closeNp()">
+            <div class="numpad-box">
+              <div class="numpad-header">
+                <span x-text="npIng.emoji + ' ' + npIng.name"></span>
+                <span class="numpad-display" x-text="npStr + (npIng.unit_type==='quantity' ? '개' : '큐브')"></span>
+              </div>
+              <div class="numpad-grid">
+                <button class="numpad-btn" type="button" @click="npPress(1)">1</button>
+                <button class="numpad-btn" type="button" @click="npPress(2)">2</button>
+                <button class="numpad-btn" type="button" @click="npPress(3)">3</button>
+                <button class="numpad-btn" type="button" @click="npPress(4)">4</button>
+                <button class="numpad-btn" type="button" @click="npPress(5)">5</button>
+                <button class="numpad-btn" type="button" @click="npPress(6)">6</button>
+                <button class="numpad-btn" type="button" @click="npPress(7)">7</button>
+                <button class="numpad-btn" type="button" @click="npPress(8)">8</button>
+                <button class="numpad-btn" type="button" @click="npPress(9)">9</button>
+                <button class="numpad-btn numpad-back" type="button" @click="npBack()">⌫</button>
+                <button class="numpad-btn" type="button" @click="npPress(0)">0</button>
+                <button class="numpad-btn numpad-done" type="button" @click="closeNp()">완료</button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </template>

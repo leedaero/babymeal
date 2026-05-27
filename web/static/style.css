@@ -574,6 +574,51 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 }
 .ing-row-input:focus { outline: none; border-color: var(--accent-blue); }
 .ing-row-unit { font-size: .75rem; color: var(--text-muted); width: 14px; }
+.ing-row-tap {
+  min-width: 52px; height: 34px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; font-weight: 600;
+  cursor: pointer; user-select: none; touch-action: manipulation;
+}
+.ing-row-tap.tap-active { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-blue-bg); }
+
+/* ── 숫자 패드 ── */
+.numpad-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 400;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.numpad-box {
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  padding: 1rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+.numpad-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .75rem;
+  font-size: .95rem; font-weight: 600; color: var(--text-primary);
+}
+.numpad-display {
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--accent-blue); min-width: 64px; text-align: right;
+}
+.numpad-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem;
+}
+.numpad-btn {
+  width: 100%; padding: .85rem 0;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  font-size: 1.5rem; font-weight: 600; color: var(--text-primary);
+  cursor: pointer; touch-action: manipulation;
+}
+.numpad-btn:active { opacity: .7; }
+.numpad-back { color: #e74c3c; border-color: #fce; background: #fff5f5; }
+.numpad-done { font-size: 1rem; background: var(--accent-blue-bg); color: #1A4F7A; border-color: var(--accent-blue); }
 
 .form-actions { display: flex; gap: .75rem; margin-top: 1.25rem; }
 .form-actions .btn { flex: 1; justify-content: center; }
