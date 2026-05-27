@@ -87,8 +87,9 @@
         <button class="btn btn-blue btn-sm" @click="saveNotify()" :disabled="notifySaving">
           <span x-text="notifySaving ? '저장 중...' : '💾 저장'"></span>
         </button>
-        <button class="btn btn-muted btn-sm" @click="testNotify()">📨 테스트 발송</button>
+        <button class="btn btn-muted btn-sm" @click="testNotify()">📨 Discord 테스트</button>
         <button class="btn btn-muted btn-sm" @click="runNotify()">▶ 지금 실행</button>
+        <button class="btn btn-muted btn-sm" @click="testPush()">📲 푸시 테스트</button>
         <span x-show="notifyMsg" x-text="notifyMsg"
               style="font-size:.8rem;" :style="notifyOk ? 'color:var(--accent-green)' : 'color:var(--danger)'"></span>
       </div>

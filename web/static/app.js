@@ -980,6 +980,14 @@ function settingsPage() {
             setTimeout(() => this.notifyMsg = '', 4000);
         },
 
+        async testPush() {
+            this.notifyMsg = '';
+            const r = await api('/api/push/test', { method: 'POST' });
+            if (r?.ok) { this.notifyOk = true;  this.notifyMsg = '푸시 전송 완료 📲'; }
+            else        { this.notifyOk = false; this.notifyMsg = '푸시 실패: ' + (r?.error || '알 수 없는 오류'); }
+            setTimeout(() => this.notifyMsg = '', 8000);
+        },
+
         async runNotify() {
             this.notifyMsg = '';
             const r = await api('/api/notification-settings/run', { method: 'POST' });

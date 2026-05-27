@@ -938,6 +938,14 @@ def create_app(config=None):
             return jsonify({'error': f'전송 실패: {e}'}), 500
         return jsonify({'ok': True})
 
+    @app.post('/api/push/test')
+    @admin_required
+    def api_push_test():
+        errors = _send_web_push_to_all('🍼 푸시 테스트', '치밀한 이유식 푸시 알림이 정상 작동합니다 ✅', '/')
+        if errors:
+            return jsonify({'ok': False, 'error': errors[0]}), 500
+        return jsonify({'ok': True})
+
     @app.post('/api/notification-settings/run')
     @admin_required
     def api_notification_run():
