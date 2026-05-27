@@ -96,6 +96,36 @@
     </div>
   </div>
 
+  <!-- 푸시 알림 VAPID 설정 -->
+  <div style="margin-top:2rem;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">📲 푸시 알림 키 설정</h2>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;">
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:.3rem;">Public Key</label>
+        <input class="form-input" type="text" x-model="notify.vapid_public_key"
+               placeholder="BHzEEbxRg..." style="width:100%;font-size:.75rem;font-family:monospace;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:.3rem;">Private Key</label>
+        <input class="form-input" type="password" x-model="notify.vapid_private_key"
+               placeholder="mMc2W7RA..." style="width:100%;font-size:.75rem;font-family:monospace;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:.3rem;">mailto</label>
+        <input class="form-input" type="email" x-model="notify.vapid_mailto"
+               placeholder="mailto:you@example.com" style="width:100%;font-size:.8rem;">
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <button class="btn btn-blue btn-sm" @click="saveNotify()" :disabled="notifySaving">
+          <span x-text="notifySaving ? '저장 중...' : '💾 저장'"></span>
+        </button>
+        <button class="btn btn-muted btn-sm" @click="testPush()">📲 푸시 테스트</button>
+        <span x-show="notifyMsg" x-text="notifyMsg"
+              style="font-size:.8rem;" :style="notifyOk ? 'color:var(--accent-green)' : 'color:var(--danger)'"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- 계정 추가 모달 -->
   <template x-if="showAddModal">
     <div class="modal-overlay" @click.self="showAddModal=false">

@@ -945,7 +945,7 @@ function settingsPage() {
         errorMsg: '',
         form: { username: '', password: '', is_admin: false },
 
-        notify: { enabled: false, notify_hour: 8, notify_minute: 0, notify_threshold: 3, discord_webhook: '' },
+        notify: { enabled: false, notify_hour: 8, notify_minute: 0, notify_threshold: 3, discord_webhook: '', vapid_public_key: '', vapid_private_key: '', vapid_mailto: '' },
         notifySaving: false,
         notifyMsg: '',
         notifyOk: true,

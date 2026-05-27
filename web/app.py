@@ -884,6 +884,9 @@ def create_app(config=None):
         for alter in [
             "ALTER TABLE notification_settings ADD COLUMN notify_threshold TINYINT NOT NULL DEFAULT 3",
             "ALTER TABLE notification_settings ADD COLUMN discord_webhook VARCHAR(500) NOT NULL DEFAULT ''",
+            "ALTER TABLE notification_settings ADD COLUMN vapid_public_key VARCHAR(200) NOT NULL DEFAULT ''",
+            "ALTER TABLE notification_settings ADD COLUMN vapid_private_key VARCHAR(200) NOT NULL DEFAULT ''",
+            "ALTER TABLE notification_settings ADD COLUMN vapid_mailto VARCHAR(200) NOT NULL DEFAULT ''",
         ]:
             try:
                 cur.execute(alter)
@@ -896,8 +899,31 @@ def create_app(config=None):
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
-            cur.execute("SELECT enabled, notify_hour, notify_minute, notify_threshold, discord_webhook FROM notification_settings WHERE id=1")
-            return cur.fetchone() or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0, 'notify_threshold': 3, 'discord_webhook': ''}
+            cur.execute("""SELECT enabled, notify_hour, notify_minute, notify_threshold,
+                                  discord_webhook, vapid_public_key, vapid_private_key, vapid_mailto
+                           FROM notification_settings WHERE id=1""")
+            row = cur.fetchone() or {}
+            # config.json vapid 마이그레이션 (DB에 없을 때 1회)
+            if not row.get('vapid_private_key'):
+                try:
+                    cfg_vapid = _db.load_config().get('vapid', {})
+                    if cfg_vapid.get('private_key'):
+                        cur.execute("""UPDATE notification_settings
+                                       SET vapid_public_key=%s, vapid_private_key=%s, vapid_mailto=%s
+                                       WHERE id=1""",
+                                    (cfg_vapid.get('public_key',''),
+                                     cfg_vapid.get('private_key',''),
+                                     cfg_vapid.get('mailto','')))
+                        conn.commit()
+                        row['vapid_public_key']  = cfg_vapid.get('public_key','')
+                        row['vapid_private_key'] = cfg_vapid.get('private_key','')
+                        row['vapid_mailto']      = cfg_vapid.get('mailto','')
+                        logging.info('VAPID 키 config.json → DB 마이그레이션 완료')
+                except Exception:
+                    pass
+            return row or {'enabled': 0, 'notify_hour': 8, 'notify_minute': 0,
+                           'notify_threshold': 3, 'discord_webhook': '',
+                           'vapid_public_key': '', 'vapid_private_key': '', 'vapid_mailto': ''}
         finally:
             conn.close()
 
@@ -911,6 +937,9 @@ def create_app(config=None):
             'notify_minute':    row['notify_minute'],
             'notify_threshold': row.get('notify_threshold', 3),
             'discord_webhook':  row.get('discord_webhook', ''),
+            'vapid_public_key':  row.get('vapid_public_key', ''),
+            'vapid_private_key': row.get('vapid_private_key', ''),
+            'vapid_mailto':      row.get('vapid_mailto', ''),
         })
 
     @app.post('/api/notification-settings/test')
@@ -1027,15 +1056,21 @@ def create_app(config=None):
         except (TypeError, ValueError):
             return jsonify({'error': '유효하지 않은 값입니다'}), 400
 
-        webhook = str(d.get('discord_webhook', '')).strip()
+        webhook      = str(d.get('discord_webhook', '')).strip()
+        vapid_pub    = str(d.get('vapid_public_key', '')).strip()
+        vapid_priv   = str(d.get('vapid_private_key', '')).strip()
+        vapid_mailto = str(d.get('vapid_mailto', '')).strip()
 
         conn = _db.get_connection()
         try:
             _ensure_notification_table(conn)
             cur = conn.cursor()
             cur.execute(
-                "UPDATE notification_settings SET enabled=%s, notify_hour=%s, notify_minute=%s, notify_threshold=%s, discord_webhook=%s WHERE id=1",
-                (int(enabled), hour, minute, threshold, webhook),
+                """UPDATE notification_settings
+                   SET enabled=%s, notify_hour=%s, notify_minute=%s, notify_threshold=%s,
+                       discord_webhook=%s, vapid_public_key=%s, vapid_private_key=%s, vapid_mailto=%s
+                   WHERE id=1""",
+                (int(enabled), hour, minute, threshold, webhook, vapid_pub, vapid_priv, vapid_mailto),
             )
             conn.commit()
         finally:
@@ -1065,8 +1100,8 @@ def create_app(config=None):
     @app.get('/api/push/vapid-public-key')
     @login_required
     def api_push_vapid_key():
-        cfg = _db.load_config()
-        return jsonify({'publicKey': cfg.get('vapid', {}).get('public_key', '')})
+        row = _get_notification_settings_row()
+        return jsonify({'publicKey': row.get('vapid_public_key', '')})
 
     @app.post('/api/push/subscribe')
     @login_required
@@ -1109,8 +1144,12 @@ def create_app(config=None):
         except ImportError:
             logging.warning('pywebpush 미설치 — 웹 푸시 불가')
             return []
-        cfg = _db.load_config()
-        vapid = cfg.get('vapid', {})
+        row = _get_notification_settings_row()
+        vapid = {
+            'private_key': row.get('vapid_private_key', ''),
+            'public_key':  row.get('vapid_public_key', ''),
+            'mailto':      row.get('vapid_mailto', ''),
+        }
         if not vapid.get('private_key'):
             logging.warning('VAPID private_key 미설정 — 웹 푸시 불가')
             return []
