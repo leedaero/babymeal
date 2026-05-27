@@ -1,12 +1,18 @@
 self.addEventListener('push', event => {
-  const data = event.data ? event.data.json() : {};
+  let title = '치밀한 이유식';
+  let body  = '';
+  let url   = '/';
+  try {
+    if (event.data) {
+      const d = event.data.json();
+      title = d.title || title;
+      body  = d.body  || body;
+      url   = d.url   || url;
+    }
+  } catch (e) {}
+
   event.waitUntil(
-    self.registration.showNotification(data.title || '치밀한 이유식', {
-      body:  data.body  || '',
-      icon:  '/static/apple-touch-icon.png',
-      badge: '/static/favicon.ico',
-      data:  { url: data.url || '/' },
-    })
+    self.registration.showNotification(title, { body, data: { url } })
   );
 });
 
