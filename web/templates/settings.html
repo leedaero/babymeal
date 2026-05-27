@@ -100,6 +100,11 @@
   <div style="margin-top:2rem;">
     <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">📲 푸시 알림 키 설정</h2>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;">
+      <div style="margin-bottom:.75rem;padding:.5rem .75rem;background:var(--muted-bg);border-radius:6px;font-size:.75rem;">
+        <span style="color:var(--text-muted);">현재 저장된 키: </span>
+        <span x-text="notify.vapid_public_key ? notify.vapid_public_key.slice(0,20)+'...' : '❌ 없음'"
+              :style="notify.vapid_public_key ? 'color:var(--accent-green);font-family:monospace' : 'color:var(--danger)'"></span>
+      </div>
       <div style="margin-bottom:1rem;">
         <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:.3rem;">Public Key</label>
         <input class="form-input" type="text" x-model="notify.vapid_public_key"

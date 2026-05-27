@@ -1153,7 +1153,7 @@ def create_app(config=None):
         }
         if not vapid.get('private_key'):
             logging.warning('VAPID private_key 미설정 — 웹 푸시 불가')
-            return []
+            return ['VAPID 키가 설정되지 않았습니다 — 설정 페이지에서 키를 저장해주세요']
         conn = _db.get_connection()
         try:
             _ensure_push_table(conn)
