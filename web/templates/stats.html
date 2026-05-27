@@ -3,10 +3,15 @@
 {% block title %}통계 — 치밀한 이유식{% endblock %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 {% endblock %}
 
 {% block content %}
 <div x-data="statsPage()">
+
+  <div class="stats-export-row">
+    <button class="btn-export" @click="exportExcel()">📊 엑셀 내보내기</button>
+  </div>
 
   <div class="stats-grid">
     <div class="stat-card">

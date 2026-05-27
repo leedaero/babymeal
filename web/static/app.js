@@ -399,6 +399,54 @@ function schedulePage() {
             ]);
         },
 
+        async exportExcel() {
+            const meals = await api('/api/meals') || [];
+            const STATUS_KO = { upcoming:'예정', confirmed:'먹음', 'auto-consumed':'먹음(자동)', skipped:'건너뜀' };
+
+            // 시트1: 재고현황
+            const ingSheet = [['재료명','이모지','남은 큐브','총 큐브','큐브당(g)','남은 총량(g)','유형','제조일']];
+            for (const i of this.ingredients) {
+                ingSheet.push([
+                    i.name, i.emoji,
+                    i.current_cubes, i.total_cubes,
+                    i.unit_type === 'weight' ? i.weight_per_cube : '-',
+                    i.unit_type === 'weight' ? i.current_cubes * i.weight_per_cube : '-',
+                    i.unit_type === 'weight' ? '무게(g)' : '수량(개)',
+                    i.created_at,
+                ]);
+            }
+
+            // 시트2: 식단기록
+            const mealSheet = [['날짜','끼니','상태','재료','총량(g)']];
+            for (const m of meals) {
+                const ingText = (m.ingredients || []).map(mi => {
+                    const cubes = mi.unit_type === 'weight' && mi.weight_per_cube
+                        ? `${Math.round(mi.grams / mi.weight_per_cube)}큐브(${mi.grams}g)`
+                        : `${mi.grams}개`;
+                    return `${mi.emoji}${mi.name} ${cubes}`;
+                }).join(' / ');
+                const totalG = (m.ingredients || [])
+                    .filter(mi => mi.unit_type === 'weight')
+                    .reduce((s, mi) => s + mi.grams, 0);
+                mealSheet.push([
+                    m.date,
+                    MEAL_LABELS[m.meal_time] || m.meal_time,
+                    STATUS_KO[m.status] || m.status,
+                    ingText,
+                    totalG || '-',
+                ]);
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws1 = XLSX.utils.aoa_to_sheet(ingSheet);
+            const ws2 = XLSX.utils.aoa_to_sheet(mealSheet);
+            ws1['!cols'] = [14,6,10,8,10,12,10,10].map(w => ({ wch: w }));
+            ws2['!cols'] = [10,8,10,60,10].map(w => ({ wch: w }));
+            XLSX.utils.book_append_sheet(wb, ws1, '재고현황');
+            XLSX.utils.book_append_sheet(wb, ws2, '식단기록');
+            XLSX.writeFile(wb, `이유식_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
+
         // 베이스 → 소고기·닭고기·대구살 → 나머지 가나다 순
         // 차후 category 필드 추가 시 이 함수만 교체하면 됨
         get sortedIngredients() {

@@ -530,6 +530,14 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   padding: 1.25rem;
 }
 .chart-title { font-size: .875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; }
+.stats-export-row { display: flex; justify-content: flex-end; margin-bottom: .75rem; }
+.btn-export {
+  background: var(--accent-green-bg); color: #1a5c33;
+  border: 1px solid var(--accent-green); border-radius: 8px;
+  padding: .45rem .9rem; font-size: .85rem; font-weight: 600;
+  cursor: pointer; touch-action: manipulation;
+}
+.btn-export:active { opacity: .75; }
 .ing-detail-card {
   margin-top: 1rem;
   background: var(--bg);
