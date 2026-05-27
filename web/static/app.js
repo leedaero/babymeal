@@ -454,7 +454,7 @@ function schedulePage() {
                 if (n === '대구살')        return 3;
                 return 4;
             };
-            return [...this.ingredients].sort((a, b) => {
+            return [...this.ingredients].filter(i => i.current_cubes > 0).sort((a, b) => {
                 const ra = rank(a.name), rb = rank(b.name);
                 if (ra !== rb) return ra - rb;
                 return a.name.localeCompare(b.name, 'ko');
