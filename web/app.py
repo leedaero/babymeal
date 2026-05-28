@@ -578,8 +578,6 @@ def create_app(config=None):
         META_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'unit_type'}
         if 'total_cubes' in d and before and d['total_cubes'] != before['total_cubes']:
             _log_ingredient_event(conn, ing_id, get_view_user_id(), 'replenished', d['total_cubes'])
-        elif d.keys() & META_FIELDS:
-            _log_ingredient_event(conn, ing_id, get_view_user_id(), 'edited', 0)
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = dict(cur.fetchone())
