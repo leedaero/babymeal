@@ -480,6 +480,20 @@ def create_app(config=None):
         except Exception as e:
             logging.warning('_ensure_meal_ingredients_consumed_col: %s', e)
 
+    def _ensure_meal_time_enum(conn):
+        """meal_time 컬럼이 최신 ENUM 값을 모두 포함하도록 마이그레이션."""
+        if getattr(_ensure_meal_time_enum, '_done', False):
+            return
+        try:
+            conn.cursor().execute("""
+                ALTER TABLE meals MODIFY COLUMN meal_time
+                ENUM('morning','morning_snack','lunch','snack','dinner','tried') NOT NULL
+            """)
+            conn.commit()
+        except Exception as e:
+            logging.warning('_ensure_meal_time_enum: %s', e)
+        _ensure_meal_time_enum._done = True
+
     def _ensure_ingredient_logs_table(conn):
         cur = conn.cursor()
         cur.execute("""
@@ -720,6 +734,7 @@ def create_app(config=None):
             return jsonify({'error': '유효하지 않은 끼니입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
+        _ensure_meal_time_enum(conn)
         meal_id = None
         try:
             cur.execute(
