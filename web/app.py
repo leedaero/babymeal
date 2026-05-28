@@ -466,14 +466,19 @@ def create_app(config=None):
     def _ensure_meal_ingredients_consumed_col(conn):
         if getattr(_ensure_meal_ingredients_consumed_col, '_done', False):
             return
-        _ensure_meal_ingredients_consumed_col._done = True
         try:
-            conn.cursor().execute(
+            cur = conn.cursor()
+            cur.execute("SHOW COLUMNS FROM meal_ingredients LIKE 'consumed'")
+            if cur.fetchone():
+                _ensure_meal_ingredients_consumed_col._done = True
+                return
+            cur.execute(
                 "ALTER TABLE meal_ingredients ADD COLUMN consumed TINYINT(1) NOT NULL DEFAULT 1"
             )
             conn.commit()
-        except Exception:
-            pass  # already exists
+            _ensure_meal_ingredients_consumed_col._done = True
+        except Exception as e:
+            logging.warning('_ensure_meal_ingredients_consumed_col: %s', e)
 
     def _ensure_ingredient_logs_table(conn):
         cur = conn.cursor()
@@ -578,6 +583,8 @@ def create_app(config=None):
         META_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'unit_type'}
         if 'total_cubes' in d and before and d['total_cubes'] != before['total_cubes']:
             _log_ingredient_event(conn, ing_id, get_view_user_id(), 'replenished', d['total_cubes'])
+        elif d.keys() & META_FIELDS:
+            _log_ingredient_event(conn, ing_id, get_view_user_id(), 'edited', 0)
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = dict(cur.fetchone())
@@ -713,6 +720,7 @@ def create_app(config=None):
             return jsonify({'error': '유효하지 않은 끼니입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
+        meal_id = None
         try:
             cur.execute(
                 'INSERT INTO meals (date, meal_time, note, user_id) VALUES (%s, %s, %s, %s)',
@@ -730,9 +738,13 @@ def create_app(config=None):
                 conn.rollback()
             except Exception:
                 pass
-            logging.error('api_meals_add DB error: %s', e)
+            logging.error('api_meals_add write error: %s', e)
             return jsonify({'error': f'식단 저장 실패: {e}'}), 500
-        return jsonify(_meal_with_ingredients(conn, meal_id)), 201
+        try:
+            return jsonify(_meal_with_ingredients(conn, meal_id)), 201
+        except Exception as e:
+            logging.error('api_meals_add read error (meal_id=%s): %s', meal_id, e)
+            return jsonify({'error': f'식단은 저장됐지만 불러오기 실패: {e}'}), 500
 
     @app.put('/api/meals/<int:meal_id>')
     @login_required
