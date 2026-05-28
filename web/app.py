@@ -713,17 +713,25 @@ def create_app(config=None):
             return jsonify({'error': '유효하지 않은 끼니입니다'}), 400
         conn = _mod.get_db()
         cur  = conn.cursor()
-        cur.execute(
-            'INSERT INTO meals (date, meal_time, note, user_id) VALUES (%s, %s, %s, %s)',
-            (d['date'], d['meal_time'], d.get('note', ''), get_view_user_id())
-        )
-        meal_id = cur.lastrowid
-        for mi in d.get('ingredients', []):
+        try:
             cur.execute(
-                'INSERT INTO meal_ingredients (meal_id, ingredient_id, grams) VALUES (%s, %s, %s)',
-                (meal_id, mi['ingredient_id'], mi['grams'])
+                'INSERT INTO meals (date, meal_time, note, user_id) VALUES (%s, %s, %s, %s)',
+                (d['date'], d['meal_time'], d.get('note', ''), get_view_user_id())
             )
-        conn.commit()
+            meal_id = cur.lastrowid
+            for mi in d.get('ingredients', []):
+                cur.execute(
+                    'INSERT INTO meal_ingredients (meal_id, ingredient_id, grams) VALUES (%s, %s, %s)',
+                    (meal_id, mi['ingredient_id'], mi['grams'])
+                )
+            conn.commit()
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            logging.error('api_meals_add DB error: %s', e)
+            return jsonify({'error': f'식단 저장 실패: {e}'}), 500
         return jsonify(_meal_with_ingredients(conn, meal_id)), 201
 
     @app.put('/api/meals/<int:meal_id>')
