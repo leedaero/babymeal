@@ -686,10 +686,14 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
                 .filter(([, c]) => c > 0)
                 .map(([id, c]) => ({ ingredient_id: parseInt(id), grams: this._cubesToGrams(parseInt(id), c) }));
             if (!items.length) return;
-            await api('/api/meals', {
+            const result = await api('/api/meals', {
                 method:'POST',
                 body:{ date: this.date, meal_time: this.mealTime, ingredients: items }
             });
+            if (!result || result.error) {
+                alert(result?.error || '식단 추가에 실패했습니다');
+                return;
+            }
             this.$dispatch('meal-saved');
         },
     };
@@ -746,10 +750,14 @@ function editMealModal(meal, ingredients) {
                 .filter(([, c]) => c > 0)
                 .map(([id, c]) => ({ ingredient_id: parseInt(id), grams: this._cubesToGrams(parseInt(id), c) }));
             if (!items.length) return;
-            await api(`/api/meals/${this.mealId}`, {
+            const result = await api(`/api/meals/${this.mealId}`, {
                 method: 'PUT',
                 body: { date: this.date, meal_time: this.mealTime, ingredients: items },
             });
+            if (!result || result.error) {
+                alert(result?.error || '식단 수정에 실패했습니다');
+                return;
+            }
             this.$dispatch('meal-edited');
         },
     };
