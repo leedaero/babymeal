@@ -215,17 +215,16 @@ def test_api_ingredient_logs_requires_auth(app):
 
 
 def test_jwt_helper_make_and_decode(app):
-    with app.app_context():
-        import jwt as _jwt
-        secret = 'test'
-        import secrets as _s
-        from datetime import datetime, timedelta
-        jti = _s.token_hex(32)
-        access = _jwt.encode(
-            {'user_id': 1, 'username': 'admin', 'is_admin': True,
-             'exp': datetime.utcnow() + timedelta(hours=1)},
-            secret, algorithm='HS256'
-        )
-        payload = _jwt.decode(access, secret, algorithms=['HS256'])
-        assert payload['user_id'] == 1
-        assert payload['username'] == 'admin'
+    """Verify JWT encode/decode round-trip with the app's secret key format."""
+    import jwt as _jwt
+    from datetime import datetime, timedelta
+    secret = 'test-secret-key-that-is-long-enough!!'  # avoids InsecureKeyLengthWarning
+    access = _jwt.encode(
+        {'user_id': 1, 'username': 'admin', 'is_admin': True,
+         'exp': datetime.utcnow() + timedelta(hours=1)},
+        secret, algorithm='HS256'
+    )
+    payload = _jwt.decode(access, secret, algorithms=['HS256'])
+    assert payload['user_id'] == 1
+    assert payload['username'] == 'admin'
+    assert payload['is_admin'] is True
