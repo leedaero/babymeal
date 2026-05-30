@@ -1,5 +1,5 @@
 name: babymeal_app
-description: "A new Flutter project."
+description: "치밀한 이유식 — 이유식 재고 및 식단 관리 앱"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
