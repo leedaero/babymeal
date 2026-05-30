@@ -232,7 +232,6 @@ def create_app(config=None):
 
     @app.post('/api/auth/login')
     def api_auth_login():
-        import traceback as _tb
         d = request.get_json() or {}
         username = d.get('username', '').strip()
         password = d.get('password', '')
@@ -241,36 +240,31 @@ def create_app(config=None):
         ip = _client_ip()
         if _is_blocked(ip):
             return jsonify({'error': f'로그인 시도 초과. {_BLOCK_MINUTES}분 후 재시도하세요'}), 429
-        try:
-            conn = _mod.get_db()
-            cur = conn.cursor()
-            cur.execute(
-                'SELECT id, password_hash, is_admin, is_active FROM users WHERE username=%s',
-                (username,)
-            )
-            user = cur.fetchone()
-            if not user or not user['is_active'] or not check_password_hash(user['password_hash'], password):
-                _record_failure(ip)
-                return jsonify({'error': '아이디 또는 비밀번호가 올바르지 않습니다'}), 401
-            _clear_attempts(ip)
-            access, refresh, jti = _make_tokens(user['id'], username, bool(user['is_admin']))
-            _ensure_auth_tables(conn)
-            expires_at = datetime.utcnow() + timedelta(days=30)
-            cur.execute(
-                'INSERT INTO refresh_tokens (user_id, jti, expires_at) VALUES (%s, %s, %s)',
-                (user['id'], jti, expires_at)
-            )
-            conn.commit()
-            return jsonify({
-                'access_token': access,
-                'refresh_token': refresh,
-                'username': username,
-                'is_admin': bool(user['is_admin']),
-            })
-        except Exception as _e:
-            with open('/tmp/login_err.log', 'a') as _f:
-                _f.write(_tb.format_exc() + '\n')
-            return jsonify({'error': f'서버 오류: {_e}'}), 500
+        conn = _mod.get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT id, password_hash, is_admin, is_active FROM users WHERE username=%s',
+            (username,)
+        )
+        user = cur.fetchone()
+        if not user or not user['is_active'] or not check_password_hash(user['password_hash'], password):
+            _record_failure(ip)
+            return jsonify({'error': '아이디 또는 비밀번호가 올바르지 않습니다'}), 401
+        _clear_attempts(ip)
+        access, refresh, jti = _make_tokens(user['id'], username, bool(user['is_admin']))
+        _ensure_auth_tables(conn)
+        expires_at = datetime.utcnow() + timedelta(days=30)
+        cur.execute(
+            'INSERT INTO refresh_tokens (user_id, jti, expires_at) VALUES (%s, %s, %s)',
+            (user['id'], jti, expires_at)
+        )
+        conn.commit()
+        return jsonify({
+            'access_token': access,
+            'refresh_token': refresh,
+            'username': username,
+            'is_admin': bool(user['is_admin']),
+        })
 
     @app.post('/api/auth/refresh')
     def api_auth_refresh():
