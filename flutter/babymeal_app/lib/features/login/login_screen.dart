@@ -13,8 +13,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  static const _serverUrl = 'https://baby.daero.me';
   final _formKey = GlobalKey<FormState>();
-  final _serverCtrl = TextEditingController();
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _userFocus = FocusNode();
@@ -22,20 +22,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _loading = false;
   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    AuthStorage.serverUrl.then((v) {
-      if (v != null && mounted) _serverCtrl.text = v;
-    });
-  }
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     try {
       await ref.read(authProvider.notifier).login(
-        _serverCtrl.text.trim(),
+        _serverUrl,
         _userCtrl.text.trim(),
         _passCtrl.text,
       );
@@ -68,19 +60,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const Text('🍼 치밀한 이유식',
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _serverCtrl,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) => _userFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: '서버 URL',
-                      hintText: 'https://babymeal.example.com',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'URL을 입력하세요' : null,
-                  ),
-                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _userCtrl,
                     focusNode: _userFocus,
@@ -132,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _serverCtrl.dispose(); _userCtrl.dispose(); _passCtrl.dispose();
+    _userCtrl.dispose(); _passCtrl.dispose();
     _userFocus.dispose(); _passFocus.dispose();
     super.dispose();
   }
