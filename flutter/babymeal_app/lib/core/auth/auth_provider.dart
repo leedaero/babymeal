@@ -18,6 +18,9 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState());
 
+  // Token existence is sufficient here — expiry is handled transparently by the
+  // ApiClient 401 interceptor. If the refresh token is also expired, the first
+  // API call will fail with a 401 and the caller must invoke logout().
   Future<void> checkAuth() async {
     final token = await AuthStorage.accessToken;
     if (token == null) { state = const AuthState(); return; }

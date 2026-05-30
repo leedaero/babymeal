@@ -5,7 +5,7 @@ import '../auth/auth_storage.dart';
 class ApiClient {
   static final ApiClient instance = ApiClient._();
   late final Dio dio;
-  bool _refreshing = false;
+  Future<bool>? _refreshFuture;
 
   ApiClient._() {
     dio = Dio(BaseOptions(
@@ -28,10 +28,9 @@ class ApiClient {
   }
 
   Future<void> _onError(DioException e, ErrorInterceptorHandler h) async {
-    if (e.response?.statusCode == 401 && !_refreshing) {
-      _refreshing = true;
-      final ok = await _tryRefresh();
-      _refreshing = false;
+    if (e.response?.statusCode == 401) {
+      _refreshFuture ??= _tryRefresh().whenComplete(() => _refreshFuture = null);
+      final ok = await _refreshFuture!;
       if (ok) {
         final opts = e.requestOptions;
         opts.headers['Authorization'] = 'Bearer ${await AuthStorage.accessToken}';
@@ -49,8 +48,10 @@ class ApiClient {
     final rt = await AuthStorage.refreshToken;
     if (rt == null || serverUrl.isEmpty) return false;
     try {
-      final resp = await Dio()
-          .post('$serverUrl/api/auth/refresh', data: {'refresh_token': rt});
+      final resp = await Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
+      )).post('$serverUrl/api/auth/refresh', data: {'refresh_token': rt});
       await AuthStorage.saveTokens(
         accessToken: resp.data['access_token'],
         refreshToken: resp.data['refresh_token'] ?? rt,
