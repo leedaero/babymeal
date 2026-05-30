@@ -218,7 +218,7 @@ def create_app(config=None):
     def api_auth_login():
         d = request.get_json() or {}
         username = d.get('username', '').strip()
-        password = d.get('password', '').strip()
+        password = d.get('password', '')
         if not username or not password:
             return jsonify({'error': '아이디와 비밀번호를 입력하세요'}), 400
         ip = _client_ip()
@@ -267,11 +267,10 @@ def create_app(config=None):
         _ensure_auth_tables(conn)
         cur = conn.cursor()
         cur.execute(
-            'SELECT id, revoked FROM refresh_tokens WHERE jti=%s AND user_id=%s',
+            'UPDATE refresh_tokens SET revoked=1 WHERE jti=%s AND user_id=%s AND revoked=0 AND expires_at > NOW()',
             (payload['jti'], payload['user_id'])
         )
-        row = cur.fetchone()
-        if not row or row['revoked']:
+        if cur.rowcount == 0:
             return jsonify({'error': '무효화된 토큰'}), 401
         cur.execute(
             'SELECT id, username, is_admin FROM users WHERE id=%s AND is_active=1',
@@ -281,7 +280,6 @@ def create_app(config=None):
         if not user:
             return jsonify({'error': '사용자 없음'}), 401
         access, new_refresh, new_jti = _make_tokens(user['id'], user['username'], bool(user['is_admin']))
-        cur.execute('UPDATE refresh_tokens SET revoked=1 WHERE jti=%s', (payload['jti'],))
         expires_at = datetime.utcnow() + timedelta(days=30)
         cur.execute(
             'INSERT INTO refresh_tokens (user_id, jti, expires_at) VALUES (%s, %s, %s)',
@@ -303,8 +301,8 @@ def create_app(config=None):
                 cur = conn.cursor()
                 cur.execute('UPDATE refresh_tokens SET revoked=1 WHERE jti=%s', (payload['jti'],))
                 conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logging.warning('logout token revocation 실패: %s', e)
         return jsonify({'ok': True})
 
     # ─── 페이지 라우트 ────────────────────────────────────
