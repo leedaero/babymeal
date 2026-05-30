@@ -1,4 +1,5 @@
 // lib/features/login/login_screen.dart
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth/auth_provider.dart';
@@ -16,6 +17,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _serverCtrl = TextEditingController();
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _userFocus = FocusNode();
+  final _passFocus = FocusNode();
   bool _loading = false;
   String? _error;
 
@@ -42,7 +45,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() { _error = '로그인 실패: $e'; });
+      final msg = e is DioException && e.response?.statusCode == 401
+          ? '아이디 또는 비밀번호가 올바르지 않습니다.'
+          : e is DioException
+              ? '서버에 연결할 수 없습니다. URL을 확인해 주세요.'
+              : '로그인 중 오류가 발생했습니다.';
+      setState(() { _error = msg; });
     } finally {
       if (mounted) setState(() { _loading = false; });
     }
@@ -62,6 +70,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _serverCtrl,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) => _userFocus.requestFocus(),
                     decoration: const InputDecoration(
                       labelText: '서버 URL',
                       hintText: 'https://babymeal.example.com',
@@ -73,6 +83,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _userCtrl,
+                    focusNode: _userFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) => _passFocus.requestFocus(),
                     decoration: const InputDecoration(
                       labelText: '아이디',
                       border: OutlineInputBorder(),
@@ -83,7 +96,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passCtrl,
+                    focusNode: _passFocus,
                     obscureText: true,
+                    textInputAction: TextInputAction.done,
                     decoration: const InputDecoration(
                       labelText: '비밀번호',
                       border: OutlineInputBorder(),
@@ -118,6 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void dispose() {
     _serverCtrl.dispose(); _userCtrl.dispose(); _passCtrl.dispose();
+    _userFocus.dispose(); _passFocus.dispose();
     super.dispose();
   }
 }
