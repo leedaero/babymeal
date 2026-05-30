@@ -87,6 +87,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+    ctrl.dispose();
     if (result != null && result.isNotEmpty) {
       await AuthStorage.saveServerUrl(result);
       if (context.mounted) {
@@ -108,7 +109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     int hour = settingsAsync['notify_hour'] ?? 8;
     int minute = settingsAsync['notify_minute'] ?? 0;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) => AlertDialog(
@@ -203,6 +204,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+    webhookCtrl.dispose();
+    thresholdCtrl.dispose();
   }
 
   Future<void> _openUserManagement(BuildContext context) async {
@@ -287,7 +290,7 @@ class _UserManagementScreenState
   Future<void> _addUser(BuildContext context) async {
     final userCtrl = TextEditingController();
     final passCtrl = TextEditingController();
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('사용자 추가'),
@@ -322,5 +325,7 @@ class _UserManagementScreenState
         ],
       ),
     );
+    userCtrl.dispose();
+    passCtrl.dispose();
   }
 }
