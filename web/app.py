@@ -94,8 +94,12 @@ def create_app(config=None):
         auth = request.headers.get('Authorization', '')
         if not auth.startswith('Bearer '):
             return None
+        import jwt as _jwt
         try:
             return _decode_access_token(auth[7:])
+        except _jwt.ExpiredSignatureError:
+            g.jwt_token_expired = True
+            return None
         except Exception:
             return None
 
@@ -204,6 +208,8 @@ def create_app(config=None):
                 g.jwt_user = jwt_user
                 return f(*args, **kwargs)
             if request.path.startswith('/api/'):
+                if getattr(g, 'jwt_token_expired', False):
+                    return jsonify({'error': '토큰 만료'}), 401
                 return jsonify({'error': '인증 필요'}), 401
             return redirect(url_for('login_page'))
         return wrapper
@@ -529,7 +535,9 @@ def create_app(config=None):
         return jsonify(dict(cur.fetchone()))
 
     def _page_ctx():
-        uid = session['user_id']
+        uid = session.get('user_id') or getattr(g, 'jwt_user', {}).get('user_id')
+        if not uid:
+            return {}
         vid = session.get('view_as_user_id', uid)
         ctx = {
             'username': session.get('username'),
