@@ -228,3 +228,33 @@ def test_jwt_helper_make_and_decode(app):
     assert payload['user_id'] == 1
     assert payload['username'] == 'admin'
     assert payload['is_admin'] is True
+
+
+def test_api_auth_login_success(app):
+    from werkzeug.security import generate_password_hash
+    cur = make_cursor([{
+        'id': 1, 'password_hash': generate_password_hash('pw', method='pbkdf2:sha256'),
+        'is_admin': True, 'is_active': True
+    }])
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        client = app.test_client()
+        resp = client.post('/api/auth/login',
+                           json={'username': 'admin', 'password': 'pw'})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert 'access_token' in data
+        assert 'refresh_token' in data
+
+def test_api_auth_login_wrong_password(app):
+    from werkzeug.security import generate_password_hash
+    cur = make_cursor([{
+        'id': 1, 'password_hash': generate_password_hash('correct', method='pbkdf2:sha256'),
+        'is_admin': False, 'is_active': True
+    }])
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        client = app.test_client()
+        resp = client.post('/api/auth/login',
+                           json={'username': 'u', 'password': 'wrong'})
+        assert resp.status_code == 401

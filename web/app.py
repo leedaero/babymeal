@@ -212,6 +212,101 @@ def create_app(config=None):
             return f(*args, **kwargs)
         return wrapper
 
+    # ─── JWT 인증 API ─────────────────────────────────────────
+
+    @app.post('/api/auth/login')
+    def api_auth_login():
+        d = request.get_json() or {}
+        username = d.get('username', '').strip()
+        password = d.get('password', '').strip()
+        if not username or not password:
+            return jsonify({'error': '아이디와 비밀번호를 입력하세요'}), 400
+        ip = _client_ip()
+        if _is_blocked(ip):
+            return jsonify({'error': f'로그인 시도 초과. {_BLOCK_MINUTES}분 후 재시도하세요'}), 429
+        conn = _mod.get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT id, password_hash, is_admin, is_active FROM users WHERE username=%s',
+            (username,)
+        )
+        user = cur.fetchone()
+        if not user or not user['is_active'] or not check_password_hash(user['password_hash'], password):
+            _record_failure(ip)
+            return jsonify({'error': '아이디 또는 비밀번호가 올바르지 않습니다'}), 401
+        _clear_attempts(ip)
+        access, refresh, jti = _make_tokens(user['id'], username, bool(user['is_admin']))
+        _ensure_auth_tables(conn)
+        expires_at = datetime.utcnow() + timedelta(days=30)
+        cur.execute(
+            'INSERT INTO refresh_tokens (user_id, jti, expires_at) VALUES (%s, %s, %s)',
+            (user['id'], jti, expires_at)
+        )
+        conn.commit()
+        return jsonify({
+            'access_token': access,
+            'refresh_token': refresh,
+            'username': username,
+            'is_admin': bool(user['is_admin']),
+        })
+
+    @app.post('/api/auth/refresh')
+    def api_auth_refresh():
+        import jwt as _jwt
+        d = request.get_json() or {}
+        token = d.get('refresh_token', '')
+        if not token:
+            return jsonify({'error': 'refresh_token 필요'}), 400
+        try:
+            payload = _jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        except _jwt.ExpiredSignatureError:
+            return jsonify({'error': '리프레시 토큰 만료'}), 401
+        except _jwt.InvalidTokenError:
+            return jsonify({'error': '유효하지 않은 토큰'}), 401
+        conn = _mod.get_db()
+        _ensure_auth_tables(conn)
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT id, revoked FROM refresh_tokens WHERE jti=%s AND user_id=%s',
+            (payload['jti'], payload['user_id'])
+        )
+        row = cur.fetchone()
+        if not row or row['revoked']:
+            return jsonify({'error': '무효화된 토큰'}), 401
+        cur.execute(
+            'SELECT id, username, is_admin FROM users WHERE id=%s AND is_active=1',
+            (payload['user_id'],)
+        )
+        user = cur.fetchone()
+        if not user:
+            return jsonify({'error': '사용자 없음'}), 401
+        access, new_refresh, new_jti = _make_tokens(user['id'], user['username'], bool(user['is_admin']))
+        cur.execute('UPDATE refresh_tokens SET revoked=1 WHERE jti=%s', (payload['jti'],))
+        expires_at = datetime.utcnow() + timedelta(days=30)
+        cur.execute(
+            'INSERT INTO refresh_tokens (user_id, jti, expires_at) VALUES (%s, %s, %s)',
+            (user['id'], new_jti, expires_at)
+        )
+        conn.commit()
+        return jsonify({'access_token': access, 'refresh_token': new_refresh})
+
+    @app.post('/api/auth/logout')
+    def api_auth_logout():
+        import jwt as _jwt
+        d = request.get_json() or {}
+        token = d.get('refresh_token', '')
+        if token:
+            try:
+                payload = _jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+                conn = _mod.get_db()
+                _ensure_auth_tables(conn)
+                cur = conn.cursor()
+                cur.execute('UPDATE refresh_tokens SET revoked=1 WHERE jti=%s', (payload['jti'],))
+                conn.commit()
+            except Exception:
+                pass
+        return jsonify({'ok': True})
+
     # ─── 페이지 라우트 ────────────────────────────────────
 
     @app.route('/login', methods=['GET', 'POST'])
