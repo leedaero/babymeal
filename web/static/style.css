@@ -414,6 +414,24 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
   .main         { padding-left: .75rem; padding-right: .75rem; }
   .cal-slot     { font-size: .55rem; padding: .08rem .2rem; }
   .cal-date-num { font-size: .65rem; }
+
+  /* ─── 재고현황 카드 모바일 압축 ─── */
+  .cube-grid    { gap: .5rem; }
+  .cube-card    { padding: .6rem .5rem; gap: .3rem; border-radius: 10px; }
+  .cube-icon    { width: 36px; height: 36px; font-size: 1.1rem; border-radius: 8px; }
+  .cube-name    { font-size: .8rem; }
+  .cube-unit    { font-size: .68rem; }
+  .cube-count   { font-size: 1.35rem; }
+  .adj-btn      { width: 26px; height: 26px; font-size: .9rem; }
+  .cube-remaining-grams { font-size: .66rem; }
+  .cube-add-btn { min-height: 110px; font-size: .75rem; }
+  .cube-add-btn span:first-child { font-size: 1.4rem !important; }
+  .stock-warning       { padding: .5rem .65rem; gap: .5rem; }
+  .stock-warning-icon  { font-size: 1rem; }
+  .stock-warning-title { font-size: .8rem; }
+  .stock-warning-body  { font-size: .72rem; }
+  /* 카드 내 아이콘 버튼 축소 */
+  .cube-card .btn.btn-sm { padding: .15rem .3rem !important; font-size: .7rem; }
 }
 
 /* ─── 버튼 ─── */
