@@ -150,31 +150,38 @@ class _IngredientTile extends StatelessWidget {
   }
 
   Future<void> _showLogs(BuildContext context) async {
-    final logs = await IngredientActions.logs(item.id);
-    if (!context.mounted) return;
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('${item.emoji} ${item.name} 로그',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: logs.length,
-              itemBuilder: (_, i) {
-                final l = logs[i];
-                return ListTile(
-                  title: Text('${l['event_type']} ${l['delta'] > 0 ? '+' : ''}${l['delta']}'),
-                  subtitle: Text(l['logged_at']?.toString().substring(0, 16) ?? ''),
-                );
-              },
+    try {
+      final logs = await IngredientActions.logs(item.id);
+      if (!context.mounted) return;
+      showModalBottomSheet(
+        context: context,
+        builder: (_) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('${item.emoji} ${item.name} 로그',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ),
-        ],
-      ),
-    );
+            Expanded(
+              child: ListView.builder(
+                itemCount: logs.length,
+                itemBuilder: (_, i) {
+                  final l = logs[i];
+                  return ListTile(
+                    title: Text('${l['event_type']} ${l['delta'] > 0 ? '+' : ''}${l['delta']}'),
+                    subtitle: Text(l['logged_at']?.toString().substring(0, 16) ?? ''),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('로그 불러오기 실패: $e')));
+      }
+    }
   }
 }
