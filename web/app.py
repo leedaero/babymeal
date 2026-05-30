@@ -1503,9 +1503,12 @@ def create_app(config=None):
         if not token:
             return jsonify({'error': 'token 필요'}), 400
         conn = _mod.get_db()
-        cur = conn.cursor()
-        cur.execute('DELETE FROM push_subscriptions_fcm WHERE token=%s', (token,))
-        conn.commit()
+        try:
+            cur = conn.cursor()
+            cur.execute('DELETE FROM push_subscriptions_fcm WHERE token=%s', (token,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
         return jsonify({'ok': True})
 
     def _send_realtime_alert(ing, username=''):
@@ -1565,22 +1568,19 @@ def create_app(config=None):
             items = cur.fetchall()
         finally:
             conn.close()
-        if not webhook:
-            logging.warning("discord_webhook이 설정되지 않아 알림 생략")
-            return
-
         if not items:
             logging.info("재고 부족 항목 없음 — 알림 생략")
             return
 
-        lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
-        for item in items:
-            bar = "▓" * item['current_cubes'] + "░" * max(0, threshold - item['current_cubes'])
-            lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
-        lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
-        message = "\n".join(lines)
+        names = ', '.join(f"{i['emoji']}{i['name']}({i['current_cubes']}개)" for i in items)
 
         if webhook:
+            lines = ["🚨 **재고 부족 알림** — 치밀한 이유식\n"]
+            for item in items:
+                bar = "▓" * item['current_cubes'] + "░" * max(0, threshold - item['current_cubes'])
+                lines.append(f"{item['emoji']} **{item['name']}** — {item['current_cubes']}개 남음  `{bar}`")
+            lines.append("\n> 재고 탭에서 큐브를 보충해주세요 🍼")
+            message = "\n".join(lines)
             try:
                 payload = json.dumps({"content": message}).encode("utf-8")
                 req = urllib.request.Request(
@@ -1591,8 +1591,9 @@ def create_app(config=None):
                 logging.info("Discord 재고 부족 알림 전송 완료 (%d개 항목)", len(items))
             except Exception as e:
                 logging.warning("Discord 알림 실패: %s", e)
+        else:
+            logging.warning("discord_webhook이 설정되지 않아 Discord 알림 생략")
 
-        names = ', '.join(f"{i['emoji']}{i['name']}({i['current_cubes']}개)" for i in items)
         _send_web_push_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요", '/inventory')
         _send_fcm_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요")
 
