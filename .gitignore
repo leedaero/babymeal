@@ -9,3 +9,4 @@ __pycache__/
 # Firebase
 flutter/babymeal_app/android/app/google-services.json
 firebase-service-account.json
+firebase-adminsdk.json
