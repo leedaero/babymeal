@@ -56,7 +56,7 @@ def test_unauthenticated_redirects_to_login(app):
 def test_api_ingredients_requires_auth(app):
     client = app.test_client()
     resp = client.get('/api/ingredients')
-    assert resp.status_code == 302
+    assert resp.status_code in (302, 401)
 
 
 def test_api_ingredients_list(authed_client):
@@ -211,7 +211,7 @@ def test_api_ingredient_logs(authed_client):
 def test_api_ingredient_logs_requires_auth(app):
     client = app.test_client()
     resp = client.get('/api/ingredients/1/logs')
-    assert resp.status_code == 302
+    assert resp.status_code in (302, 401)
 
 
 def test_jwt_helper_make_and_decode(app):
@@ -258,3 +258,20 @@ def test_api_auth_login_wrong_password(app):
         resp = client.post('/api/auth/login',
                            json={'username': 'u', 'password': 'wrong'})
         assert resp.status_code == 401
+
+
+def test_api_ingredients_with_bearer_token(app):
+    import jwt as _jwt
+    from datetime import datetime, timedelta
+    token = _jwt.encode(
+        {'user_id': 1, 'username': 'admin', 'is_admin': True,
+         'exp': datetime.utcnow() + timedelta(hours=1)},
+        'test', algorithm='HS256'
+    )
+    cur = make_cursor([])
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        client = app.test_client()
+        resp = client.get('/api/ingredients',
+                          headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 200

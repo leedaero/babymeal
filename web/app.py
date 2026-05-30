@@ -111,6 +111,8 @@ def create_app(config=None):
     _mod.get_db = _get_db
 
     def get_view_user_id():
+        if hasattr(g, 'jwt_user'):
+            return g.jwt_user['user_id']
         return session.get('view_as_user_id') or session.get('user_id')
 
     # ─── 보안 헤더 ───────────────────────────────────────────
@@ -195,21 +197,29 @@ def create_app(config=None):
     def login_required(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            if not session.get('logged_in'):
-                return redirect(url_for('login_page'))
-            return f(*args, **kwargs)
+            if session.get('logged_in'):
+                return f(*args, **kwargs)
+            jwt_user = _jwt_user_from_request()
+            if jwt_user:
+                g.jwt_user = jwt_user
+                return f(*args, **kwargs)
+            if request.path.startswith('/api/'):
+                return jsonify({'error': '인증 필요'}), 401
+            return redirect(url_for('login_page'))
         return wrapper
 
     def admin_required(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            if not session.get('logged_in'):
-                return redirect(url_for('login_page'))
-            if not session.get('is_admin'):
-                if request.path.startswith('/api/'):
-                    return jsonify({'error': '관리자 권한 필요'}), 403
-                return redirect(url_for('inventory_page'))
-            return f(*args, **kwargs)
+            if session.get('logged_in') and session.get('is_admin'):
+                return f(*args, **kwargs)
+            jwt_user = _jwt_user_from_request()
+            if jwt_user and jwt_user.get('is_admin'):
+                g.jwt_user = jwt_user
+                return f(*args, **kwargs)
+            if request.path.startswith('/api/'):
+                return jsonify({'error': '관리자 권한 필요'}), 403
+            return redirect(url_for('inventory_page'))
         return wrapper
 
     # ─── JWT 인증 API ─────────────────────────────────────────
@@ -779,7 +789,7 @@ def create_app(config=None):
         conn.commit()
         cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
         ing = _fmt_ingredient(cur.fetchone())
-        _username = session.get('username', '')
+        _username = getattr(g, 'jwt_user', {}).get('username') or session.get('username', '')
         threading.Thread(target=_send_realtime_alert, args=(ing, _username), daemon=True).start()
         return jsonify(ing)
 
@@ -973,7 +983,7 @@ def create_app(config=None):
                         (1 if ing_id in consumed_set else 0, meal_id, ing_id)
                     )
             _apply_stock_delta(conn, meal_id, direction='deduct', user_id=get_view_user_id())
-            _username = session.get('username', '')
+            _username = getattr(g, 'jwt_user', {}).get('username') or session.get('username', '')
             cur.execute("""
                 SELECT i.name, i.emoji, i.current_cubes
                 FROM meal_ingredients mi
