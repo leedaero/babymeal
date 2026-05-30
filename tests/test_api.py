@@ -212,3 +212,20 @@ def test_api_ingredient_logs_requires_auth(app):
     client = app.test_client()
     resp = client.get('/api/ingredients/1/logs')
     assert resp.status_code == 302
+
+
+def test_jwt_helper_make_and_decode(app):
+    with app.app_context():
+        import jwt as _jwt
+        secret = 'test'
+        import secrets as _s
+        from datetime import datetime, timedelta
+        jti = _s.token_hex(32)
+        access = _jwt.encode(
+            {'user_id': 1, 'username': 'admin', 'is_admin': True,
+             'exp': datetime.utcnow() + timedelta(hours=1)},
+            secret, algorithm='HS256'
+        )
+        payload = _jwt.decode(access, secret, algorithms=['HS256'])
+        assert payload['user_id'] == 1
+        assert payload['username'] == 'admin'

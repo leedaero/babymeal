@@ -55,6 +55,50 @@ def create_app(config=None):
 
     _mod = sys.modules[__name__]
 
+    def _ensure_auth_tables(conn):
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                user_id    INT NOT NULL,
+                jti        VARCHAR(64) NOT NULL UNIQUE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                revoked    TINYINT(1) DEFAULT 0,
+                INDEX idx_user (user_id)
+            ) DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
+
+    def _make_tokens(user_id, username, is_admin):
+        import jwt as _jwt
+        now = datetime.utcnow()
+        jti = secrets.token_hex(32)
+        access = _jwt.encode(
+            {'user_id': user_id, 'username': username, 'is_admin': is_admin,
+             'exp': now + timedelta(hours=1)},
+            app.config['SECRET_KEY'], algorithm='HS256'
+        )
+        refresh = _jwt.encode(
+            {'user_id': user_id, 'jti': jti,
+             'exp': now + timedelta(days=30)},
+            app.config['SECRET_KEY'], algorithm='HS256'
+        )
+        return access, refresh, jti
+
+    def _decode_access_token(token):
+        import jwt as _jwt
+        return _jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+
+    def _jwt_user_from_request():
+        auth = request.headers.get('Authorization', '')
+        if not auth.startswith('Bearer '):
+            return None
+        try:
+            return _decode_access_token(auth[7:])
+        except Exception:
+            return None
+
     def _get_db():
         if 'db' not in g:
             if app.config.get('TESTING'):
