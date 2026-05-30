@@ -22,7 +22,7 @@ class MealActions {
       '/api/meals/$id/status',
       data: {
         'status': status,
-        if (consumedIds != null) 'consumed_ids': consumedIds,
+        'consumed_ids': consumedIds,
       },
     );
     return Meal.fromJson(resp.data as Map<String, dynamic>);

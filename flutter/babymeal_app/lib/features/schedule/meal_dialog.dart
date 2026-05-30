@@ -1,7 +1,6 @@
 // lib/features/schedule/meal_dialog.dart
 import 'package:flutter/material.dart';
 import '../inventory/ingredient_provider.dart';
-import '../inventory/ingredient_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MealDialog extends ConsumerStatefulWidget {
@@ -22,7 +21,7 @@ class _MealDialogState extends ConsumerState<MealDialog> {
     ('dinner', '저녁'),
   ];
 
-  Map<String, dynamic> toData(List<Ingredient> allIngredients) => {
+  Map<String, dynamic> toData() => {
         'date': widget.initialDate,
         'meal_time': _mealTime,
         'note': _noteCtrl.text.trim(),
@@ -42,7 +41,7 @@ class _MealDialogState extends ConsumerState<MealDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
-              value: _mealTime,
+              initialValue: _mealTime,
               items: _times
                   .map((t) =>
                       DropdownMenuItem(value: t.$1, child: Text(t.$2)))
@@ -87,7 +86,7 @@ class _MealDialogState extends ConsumerState<MealDialog> {
             child: const Text('취소')),
         ElevatedButton(
           onPressed: () {
-            final data = toData([]); // ingredients resolved via _selected
+            final data = toData();
             Navigator.pop(context, data);
           },
           child: const Text('저장'),
