@@ -275,3 +275,21 @@ def test_api_ingredients_with_bearer_token(app):
         resp = client.get('/api/ingredients',
                           headers={'Authorization': f'Bearer {token}'})
         assert resp.status_code == 200
+
+
+def test_fcm_token_add_requires_auth(app):
+    client = app.test_client()
+    resp = client.post('/api/push/fcm-token', json={'token': 'abc'})
+    assert resp.status_code == 401
+
+def test_fcm_token_add_success(app, authed_client):
+    cur = make_cursor([])
+    conn = make_conn(cur)
+    with patch('web.app.get_db', return_value=conn):
+        resp = authed_client.post(
+            '/api/push/fcm-token',
+            json={'token': 'fake-fcm-token'},
+            headers={'X-CSRF-Token': 'testtoken'},
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()['ok'] is True

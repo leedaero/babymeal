@@ -19,5 +19,8 @@
     "secret_key": "YOUR_MINIO_SECRET_KEY",
     "bucket": "babymeal",
     "secure": false
+  },
+  "firebase": {
+    "service_account_path": ""
   }
 }

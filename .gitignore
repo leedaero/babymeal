@@ -5,3 +5,7 @@ __pycache__/
 .DS_Store
 *.log
 .pytest_cache/
+
+# Firebase
+flutter/babymeal_app/android/app/google-services.json
+firebase-service-account.json

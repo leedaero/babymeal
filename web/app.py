@@ -1367,6 +1367,58 @@ def create_app(config=None):
         conn.commit()
         return jsonify({'ok': True})
 
+    def _ensure_fcm_table(conn):
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS push_subscriptions_fcm (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                user_id    INT NOT NULL,
+                token      TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_token (token(255))
+            ) DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
+
+    def _send_fcm_to_all(title, body):
+        try:
+            import firebase_admin
+            from firebase_admin import messaging, credentials
+        except ImportError:
+            logging.warning('firebase-admin 미설치 — FCM 푸시 불가')
+            return
+        cfg = _db.load_config()
+        sa_path = cfg.get('firebase', {}).get('service_account_path', '').strip()
+        if not sa_path:
+            logging.warning('Firebase 서비스 계정 미설정 — FCM 푸시 불가')
+            return
+        if not firebase_admin._apps:
+            try:
+                cred = credentials.Certificate(sa_path)
+                firebase_admin.initialize_app(cred)
+            except Exception as e:
+                logging.warning('Firebase 초기화 실패: %s', e)
+                return
+        conn = _db.get_connection()
+        try:
+            _ensure_fcm_table(conn)
+            cur = conn.cursor()
+            cur.execute('SELECT DISTINCT token FROM push_subscriptions_fcm')
+            tokens = [r['token'] for r in cur.fetchall()]
+        finally:
+            conn.close()
+        if not tokens:
+            return
+        msg = messaging.MulticastMessage(
+            notification=messaging.Notification(title=title, body=body),
+            tokens=tokens,
+        )
+        try:
+            resp = messaging.send_each_for_multicast(msg)
+            logging.info('FCM 전송: success=%d fail=%d', resp.success_count, resp.failure_count)
+        except Exception as e:
+            logging.warning('FCM 전송 실패: %s', e)
+
     def _send_web_push_to_all(title, body, url='/'):
         try:
             from pywebpush import webpush, WebPushException
@@ -1421,6 +1473,41 @@ def create_app(config=None):
 
     # ─── APScheduler ─────────────────────────────────────────
 
+    @app.post('/api/push/fcm-token')
+    @login_required
+    def api_push_fcm_token_add():
+        d = request.get_json() or {}
+        token = d.get('token', '').strip()
+        if not token:
+            return jsonify({'error': 'token 필요'}), 400
+        uid = get_view_user_id()
+        conn = _mod.get_db()
+        _ensure_fcm_table(conn)
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                'INSERT INTO push_subscriptions_fcm (user_id, token) VALUES (%s, %s) '
+                'ON DUPLICATE KEY UPDATE user_id=%s, created_at=NOW()',
+                (uid, token, uid)
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        return jsonify({'ok': True})
+
+    @app.delete('/api/push/fcm-token')
+    @login_required
+    def api_push_fcm_token_delete():
+        d = request.get_json() or {}
+        token = d.get('token', '').strip()
+        if not token:
+            return jsonify({'error': 'token 필요'}), 400
+        conn = _mod.get_db()
+        cur = conn.cursor()
+        cur.execute('DELETE FROM push_subscriptions_fcm WHERE token=%s', (token,))
+        conn.commit()
+        return jsonify({'ok': True})
+
     def _send_realtime_alert(ing, username=''):
         try:
             conn = _db.get_connection()
@@ -1459,6 +1546,7 @@ def create_app(config=None):
         push_title = f"⚠️ 재고 부족{' — ' + username if username else ''}"
         push_body  = f"{ing['emoji']} {ing['name']} {ing['current_cubes']}개 남음 — 보충해주세요"
         _send_web_push_to_all(push_title, push_body, '/')
+        _send_fcm_to_all(push_title, push_body)
 
     def _send_low_stock_notification():
         logging.info("재고 부족 알림 스케줄 실행")
@@ -1506,6 +1594,7 @@ def create_app(config=None):
 
         names = ', '.join(f"{i['emoji']}{i['name']}({i['current_cubes']}개)" for i in items)
         _send_web_push_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요", '/inventory')
+        _send_fcm_to_all('🚨 재고 부족', f"{names} — 큐브를 보충해주세요")
 
     if not app.config.get('TESTING'):  # noqa: SIM102
         try:
