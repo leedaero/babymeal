@@ -27,6 +27,7 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          FIREBASE_SA_PATH: ${{ secrets.FIREBASE_SA_PATH }}
         run: |
           python3 -c "
           import json, os
@@ -48,6 +49,9 @@ jobs:
               'secret_key': os.environ.get('MINIO_SECRET_KEY', ''),
               'bucket': 'babymeal',
               'secure': False
+            },
+            'firebase': {
+              'service_account_path': os.environ.get('FIREBASE_SA_PATH', '/volume1/DR_DATA1/babyMeal/firebase-adminsdk.json')
             }
           }
           with open('/volume1/DR_DATA1/babyMeal/config.json', 'w') as f:
