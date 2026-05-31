@@ -246,6 +246,7 @@ class _MealCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onSelected: (v) => _onMenu(context, v),
                 itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'edit', child: Text('수정 ✏️')),
                   if (meal.status != 'confirmed')
                     const PopupMenuItem(value: 'confirmed', child: Text('먹었어요 ✅')),
                   if (meal.status != 'upcoming')
@@ -264,7 +265,24 @@ class _MealCard extends StatelessWidget {
       );
 
   Future<void> _onMenu(BuildContext context, String action) async {
-    if (action == 'delete') {
+    if (action == 'edit') {
+      final data = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => MealDialog(initialDate: meal.date, existing: meal),
+      );
+      if (data == null) return;
+      try {
+        await MealActions.update(meal.id, data);
+        onRefresh();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('수정 실패: $e')));
+        }
+      }
+    } else if (action == 'delete') {
       final ok = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(

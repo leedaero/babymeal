@@ -28,6 +28,11 @@ class MealActions {
     return Meal.fromJson(resp.data as Map<String, dynamic>);
   }
 
+  static Future<Meal> update(int id, Map<String, dynamic> data) async {
+    final resp = await ApiClient.instance.dio.put('/api/meals/$id', data: data);
+    return Meal.fromJson(resp.data as Map<String, dynamic>);
+  }
+
   static Future<void> delete(int id) async {
     await ApiClient.instance.dio.delete('/api/meals/$id');
   }
