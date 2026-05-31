@@ -68,6 +68,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addIngredient',
         onPressed: () => _addIngredient(context, ref),
         child: const Icon(Icons.add),
       ),
@@ -188,9 +189,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
   }
 
   Future<void> _addIngredient(BuildContext context, WidgetRef ref) async {
-    final data = await showDialog<Map<String, dynamic>>(
+    final data = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      builder: (_) => const IngredientDialog(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const IngredientSheet(),
     );
     if (data == null) return;
     try {
@@ -330,9 +333,11 @@ class _IngredientCard extends StatelessWidget {
         }
       }
     } else if (action == 'edit') {
-      final data = await showDialog<Map<String, dynamic>>(
+      final data = await showModalBottomSheet<Map<String, dynamic>>(
         context: context,
-        builder: (_) => IngredientDialog(existing: item),
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => IngredientSheet(existing: item),
       );
       if (data == null) return;
       try {
@@ -399,18 +404,21 @@ class _IngredientCard extends StatelessWidget {
                 itemBuilder: (_, i) {
                   final l = logs[i];
                   final delta = l['delta'] as int;
-                  return ListTile(
-                    leading: Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: delta > 0 ? _lightMint : const Color(0xFFffe5e7),
-                        borderRadius: BorderRadius.circular(10),
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      leading: Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: delta > 0 ? _lightMint : const Color(0xFFffe5e7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(delta > 0 ? Icons.add : Icons.remove,
+                            color: delta > 0 ? _green : const Color(0xFFe63946), size: 18),
                       ),
-                      child: Icon(delta > 0 ? Icons.add : Icons.remove,
-                          color: delta > 0 ? _green : const Color(0xFFe63946), size: 18),
+                      title: Text('${l['event_type']} ${delta > 0 ? '+' : ''}$delta'),
+                      subtitle: Text(l['logged_at']?.toString().substring(0, 16) ?? ''),
                     ),
-                    title: Text('${l['event_type']} ${delta > 0 ? '+' : ''}$delta'),
-                    subtitle: Text(l['logged_at']?.toString().substring(0, 16) ?? ''),
                   );
                 },
               ),

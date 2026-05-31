@@ -6,6 +6,31 @@ const _green = Color(0xFF2d6a4f);
 const _mint = Color(0xFF52b788);
 const _lightMint = Color(0xFFd8f3dc);
 
+// Cube color palette
+const _cubeColors = [
+  Color(0xFFCC2200),
+  Color(0xFFE86500),
+  Color(0xFFF5C400),
+  Color(0xFF2E8B3A),
+  Color(0xFF1565C0),
+  Color(0xFF6A1B9A),
+  Color(0xFF00796B),
+  Color(0xFFE57373),
+  Color(0xFFFFFFFF),
+];
+
+String _colorToHex(Color c) =>
+    '#${c.red.toRadixString(16).padLeft(2, '0')}${c.green.toRadixString(16).padLeft(2, '0')}${c.blue.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+
+Color _hexToColor(String hex) {
+  try {
+    final h = hex.replaceFirst('#', '');
+    return Color(int.parse('FF$h', radix: 16));
+  } catch (_) {
+    return _cubeColors[4];
+  }
+}
+
 // ── 이모지 데이터 ──────────────────────────────────────────
 const _emojiList = [
   // 채소
@@ -70,7 +95,7 @@ const _emojiList = [
   {'e': '🍵', 'ko': '차', 'en': 'tea'},
 ];
 
-// ── 이모지 검색 다이얼로그 (B안) ──────────────────────────
+// ── 이모지 검색 다이얼로그 ──────────────────────────────────
 class _EmojiPickerDialog extends StatefulWidget {
   const _EmojiPickerDialog();
   @override
@@ -108,7 +133,6 @@ class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 타이틀
             Row(
               children: [
                 Container(
@@ -122,8 +146,6 @@ class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
               ],
             ),
             const SizedBox(height: 14),
-
-            // 검색창
             TextField(
               controller: _searchCtrl,
               autofocus: true,
@@ -136,47 +158,27 @@ class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
-                        onPressed: () => setState(() {
-                          _searchCtrl.clear();
-                          _query = '';
-                        }),
+                        onPressed: () => setState(() { _searchCtrl.clear(); _query = ''; }),
                       )
                     : null,
                 filled: true,
                 fillColor: const Color(0xFFF7FAF8),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _lightMint),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _lightMint),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: _mint, width: 2),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _lightMint)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _lightMint)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _mint, width: 2)),
               ),
             ),
             const SizedBox(height: 10),
-
-            // 결과 개수
-            Text(
-              results.isEmpty ? '검색 결과 없음' : '${results.length}개',
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
+            Text(results.isEmpty ? '검색 결과 없음' : '${results.length}개',
+                style: const TextStyle(fontSize: 11, color: Colors.grey)),
             const SizedBox(height: 6),
-
-            // 결과 리스트
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 300),
               child: results.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
-                        child: Text('😅 찾는 재료가 없어요', style: TextStyle(color: Colors.grey)),
-                      ),
+                      child: Center(child: Text('😅 찾는 재료가 없어요', style: TextStyle(color: Colors.grey))),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -193,21 +195,15 @@ class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
                               children: [
                                 Container(
                                   width: 42, height: 42,
-                                  decoration: BoxDecoration(
-                                    color: _lightMint,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(item['e']!, style: const TextStyle(fontSize: 22)),
-                                  ),
+                                  decoration: BoxDecoration(color: _lightMint, borderRadius: BorderRadius.circular(12)),
+                                  child: Center(child: Text(item['e']!, style: const TextStyle(fontSize: 22))),
                                 ),
                                 const SizedBox(width: 12),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(item['ko']!,
-                                        style: const TextStyle(
-                                          fontSize: 14, fontWeight: FontWeight.w700, color: _green)),
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _green)),
                                     Text(item['en']!,
                                         style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                   ],
@@ -226,22 +222,23 @@ class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
   }
 }
 
-// ── 재료 추가/수정 다이얼로그 ────────────────────────────
-class IngredientDialog extends StatefulWidget {
+// ── 재료 추가/수정 시트 ──────────────────────────────────────
+class IngredientSheet extends StatefulWidget {
   final Ingredient? existing;
-  const IngredientDialog({super.key, this.existing});
+  const IngredientSheet({super.key, this.existing});
 
   @override
-  State<IngredientDialog> createState() => _IngredientDialogState();
+  State<IngredientSheet> createState() => _IngredientSheetState();
 }
 
-class _IngredientDialogState extends State<IngredientDialog> {
+class _IngredientSheetState extends State<IngredientSheet> {
   final _nameCtrl = TextEditingController();
   final _totalCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
   String _unitType = 'weight';
   String _emoji = '';
+  Color _selectedColor = _cubeColors[4];
 
   bool get _isEdit => widget.existing != null;
 
@@ -256,9 +253,19 @@ class _IngredientDialogState extends State<IngredientDialog> {
       _weightCtrl.text = e.weightPerCube?.toString() ?? '';
       _dateCtrl.text = e.createdAt;
       _unitType = e.unitType;
+      final parsed = _hexToColor(e.color);
+      _selectedColor = _cubeColors.contains(parsed) ? parsed : _cubeColors[4];
     } else {
       _dateCtrl.text = DateTime.now().toIso8601String().substring(0, 10);
     }
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_nameCtrl, _totalCtrl, _weightCtrl, _dateCtrl]) {
+      c.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _pickEmoji() async {
@@ -293,166 +300,68 @@ class _IngredientDialogState extends State<IngredientDialog> {
       );
       return;
     }
-    Navigator.pop(context, toData());
+    Navigator.pop(context, {
+      'name': _nameCtrl.text.trim(),
+      'emoji': _emoji,
+      'color': _colorToHex(_selectedColor),
+      'created_at': _dateCtrl.text.trim(),
+      'total_cubes': int.tryParse(_totalCtrl.text) ?? 0,
+      'weight_per_cube': _unitType == 'weight' ? int.tryParse(_weightCtrl.text) : null,
+      'unit_type': _unitType,
+    });
   }
 
-  Map<String, dynamic> toData() => {
-        'name': _nameCtrl.text.trim(),
-        'emoji': _emoji,
-        'color': '#4BA3E3',
-        'created_at': _dateCtrl.text.trim(),
-        'total_cubes': int.tryParse(_totalCtrl.text) ?? 0,
-        'weight_per_cube': _unitType == 'weight' ? int.tryParse(_weightCtrl.text) : null,
-        'unit_type': _unitType,
-      };
-
   @override
-  Widget build(BuildContext context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── 그라디언트 헤더 ──────────────────────────────────────
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_mint, _green],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
                 Row(
                   children: [
                     Container(
                       width: 40, height: 40,
-                      decoration: BoxDecoration(color: _lightMint, borderRadius: BorderRadius.circular(12)),
-                      child: Icon(_isEdit ? Icons.edit_outlined : Icons.add_circle_outline,
-                          color: _green, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(_isEdit ? '재료 수정' : '재료 추가',
-                        style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w800, color: _green,
-                        )),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // 이모지 버튼 + 이름 가로 배치
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 이모지 탭 버튼
-                    GestureDetector(
-                      onTap: _pickEmoji,
-                      child: Container(
-                        width: 72, height: 58,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7FAF8),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _lightMint),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _emoji.isEmpty
-                                ? const Icon(Icons.add_reaction_outlined, color: _mint, size: 22)
-                                : Text(_emoji, style: const TextStyle(fontSize: 28)),
-                            const SizedBox(height: 2),
-                            Text(
-                              _emoji.isEmpty ? '이모지' : '변경',
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
-                            ),
-                          ],
-                        ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _isEdit ? Icons.edit_outlined : Icons.add_circle_outline,
+                        color: Colors.white, size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildField(
-                        controller: _nameCtrl,
-                        label: '재료 이름',
-                        hint: '당근',
-                        icon: Icons.label_outline,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                _buildField(
-                  controller: _dateCtrl,
-                  label: '제작일',
-                  hint: 'YYYY-MM-DD',
-                  icon: Icons.calendar_today_outlined,
-                ),
-                const SizedBox(height: 14),
-
-                _buildField(
-                  controller: _totalCtrl,
-                  label: '총 큐브 수',
-                  hint: '0',
-                  icon: Icons.grid_view_rounded,
-                  keyboard: TextInputType.number,
-                ),
-                const SizedBox(height: 14),
-
-                const Text('단위 유형',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _mint)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _unitChip('weight', '⚖️ 무게'),
-                    const SizedBox(width: 10),
-                    _unitChip('quantity', '🔢 개수'),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                if (_unitType == 'weight') ...[
-                  _buildField(
-                    controller: _weightCtrl,
-                    label: '큐브당 무게 (g)',
-                    hint: '30',
-                    icon: Icons.monitor_weight_outlined,
-                    keyboard: TextInputType.number,
-                  ),
-                  const SizedBox(height: 14),
-                ],
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: _lightMint, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: const Text('취소', style: TextStyle(color: Colors.grey)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [_mint, _green]),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(color: _mint.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: Text(_isEdit ? '수정 완료' : '추가하기',
-                              style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15,
-                              )),
-                        ),
+                    Text(
+                      _isEdit ? '재료 수정' : '재료 추가',
+                      style: const TextStyle(
+                        color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -460,8 +369,183 @@ class _IngredientDialogState extends State<IngredientDialog> {
               ],
             ),
           ),
-        ),
-      );
+          // ── 폼 ─────────────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, bottom + 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 이모지 + 이름
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: _pickEmoji,
+                        child: Container(
+                          width: 72, height: 58,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7FAF8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _lightMint),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _emoji.isEmpty
+                                  ? const Icon(Icons.add_reaction_outlined, color: _mint, size: 22)
+                                  : Text(_emoji, style: const TextStyle(fontSize: 28)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _emoji.isEmpty ? '이모지' : '변경',
+                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildField(
+                          controller: _nameCtrl,
+                          label: '재료 이름',
+                          hint: '당근',
+                          icon: Icons.label_outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildField(
+                    controller: _dateCtrl,
+                    label: '제작일',
+                    hint: 'YYYY-MM-DD',
+                    icon: Icons.calendar_today_outlined,
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildField(
+                    controller: _totalCtrl,
+                    label: '총 큐브 수',
+                    hint: '0',
+                    icon: Icons.grid_view_rounded,
+                    keyboard: TextInputType.number,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 단위 유형
+                  const Text('단위 유형',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _mint)),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    _unitChip('weight', '⚖️ 무게'),
+                    const SizedBox(width: 10),
+                    _unitChip('quantity', '🔢 개수'),
+                  ]),
+                  const SizedBox(height: 14),
+
+                  if (_unitType == 'weight') ...[
+                    _buildField(
+                      controller: _weightCtrl,
+                      label: '큐브당 무게 (g)',
+                      hint: '30',
+                      icon: Icons.monitor_weight_outlined,
+                      keyboard: TextInputType.number,
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // 큐브 색상
+                  const Text('큐브 색상',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _mint)),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: _cubeColors.map((c) {
+                      final isSelected = _selectedColor.value == c.value;
+                      final isWhite = c.value == const Color(0xFFFFFFFF).value;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedColor = c),
+                        child: Container(
+                          width: 34, height: 34,
+                          decoration: BoxDecoration(
+                            color: c,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? _green
+                                  : (isWhite ? Colors.grey.shade300 : Colors.transparent),
+                              width: isSelected ? 2.5 : 1,
+                            ),
+                            boxShadow: isSelected
+                                ? [BoxShadow(color: _green.withOpacity(0.3), blurRadius: 6)]
+                                : null,
+                          ),
+                          child: isSelected
+                              ? Icon(Icons.check, size: 16,
+                                  color: isWhite ? _green : Colors.white)
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 버튼
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: _lightMint, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: const Text('취소', style: TextStyle(color: Colors.grey)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(colors: [_mint, _green]),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(color: _mint.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4)),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: Text(
+                              _isEdit ? '수정 완료' : '추가하기',
+                              style: const TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _unitChip(String value, String label) {
     final selected = _unitType == value;
@@ -504,27 +588,10 @@ class _IngredientDialogState extends State<IngredientDialog> {
           labelStyle: const TextStyle(fontSize: 13, color: Colors.grey),
           filled: true,
           fillColor: const Color(0xFFF7FAF8),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _lightMint),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _lightMint),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _mint, width: 2),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _lightMint)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _lightMint)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _mint, width: 2)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         ),
       );
-
-  @override
-  void dispose() {
-    for (final c in [_nameCtrl, _totalCtrl, _weightCtrl, _dateCtrl]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
 }

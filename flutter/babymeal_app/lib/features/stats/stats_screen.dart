@@ -13,8 +13,16 @@ const _lightMint = Color(0xFFd8f3dc);
 const _red = Color(0xFFe05c5c);
 const _redLight = Color(0xFFffe5e7);
 const _barBlue = Color(0xFF4BA3E3);
-const _barBlueLight = Color(0xFFdbeeff);
 const _lowThreshold = 3;
+
+Color _hexToColor(String hex) {
+  try {
+    final h = hex.replaceFirst('#', '');
+    return Color(int.parse('FF$h', radix: 16));
+  } catch (_) {
+    return _barBlue;
+  }
+}
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -234,6 +242,8 @@ class _HBar extends StatelessWidget {
     final label = ing.weightPerCube != null && ing.weightPerCube! > 0
         ? '${ing.emoji} ${ing.name}  ${ing.weightPerCube}g'
         : '${ing.emoji} ${ing.name}';
+    final barColor = isLow ? _red : _hexToColor(ing.color);
+    final barBg = isLow ? _redLight : barColor.withOpacity(0.15);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -254,7 +264,7 @@ class _HBar extends StatelessWidget {
                 Container(
                   height: 22,
                   decoration: BoxDecoration(
-                    color: isLow ? _redLight : _barBlueLight,
+                    color: barBg,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
@@ -263,7 +273,7 @@ class _HBar extends StatelessWidget {
                   child: Container(
                     height: 22,
                     decoration: BoxDecoration(
-                      color: isLow ? _red : _barBlue,
+                      color: barColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
