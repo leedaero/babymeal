@@ -102,14 +102,19 @@ class _AllergyScreenState extends ConsumerState<AllergyScreen>
                     rightChevronIcon: Icon(Icons.chevron_right, color: _mint),
                   ),
                   calendarStyle: CalendarStyle(
+                    defaultDecoration: const BoxDecoration(shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(10))),
+                    weekendDecoration: const BoxDecoration(shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(10))),
+                    outsideDecoration: const BoxDecoration(shape: BoxShape.rectangle),
                     todayDecoration: BoxDecoration(
                       color: _mint.withOpacity(0.3),
+                      shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     todayTextStyle: const TextStyle(
                         color: _green, fontWeight: FontWeight.w800),
                     selectedDecoration: BoxDecoration(
                       color: _green,
+                      shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     selectedTextStyle: const TextStyle(
