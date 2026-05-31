@@ -16,9 +16,34 @@ class ScheduleScreen extends ConsumerStatefulWidget {
   ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
+class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
+    with WidgetsBindingObserver {
   DateTime _focused = DateTime.now();
   DateTime _selected = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(mealsProvider);
+    }
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(mealsProvider);
+    await ref.read(mealsProvider.future);
+  }
 
   String get _selectedStr => _selected.toIso8601String().substring(0, 10);
 
@@ -136,11 +161,15 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                   ],
                                 ),
                               )
-                            : ListView.builder(
-                                itemCount: dayMeals.length,
-                                itemBuilder: (_, i) => _MealCard(
-                                  meal: dayMeals[i],
-                                  onRefresh: () => ref.invalidate(mealsProvider),
+                            : RefreshIndicator(
+                                color: _mint,
+                                onRefresh: _refresh,
+                                child: ListView.builder(
+                                  itemCount: dayMeals.length,
+                                  itemBuilder: (_, i) => _MealCard(
+                                    meal: dayMeals[i],
+                                    onRefresh: () => ref.invalidate(mealsProvider),
+                                  ),
                                 ),
                               ),
                       ),

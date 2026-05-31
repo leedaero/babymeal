@@ -17,9 +17,34 @@ class InventoryScreen extends ConsumerStatefulWidget {
   ConsumerState<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState extends ConsumerState<InventoryScreen> {
+class _InventoryScreenState extends ConsumerState<InventoryScreen>
+    with WidgetsBindingObserver {
   String _search = '';
   String _category = '전체';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(ingredientsProvider);
+    }
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(ingredientsProvider);
+    await ref.read(ingredientsProvider.future);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +102,16 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
-                        itemCount: filtered.length,
-                        itemBuilder: (ctx, i) => _IngredientCard(
-                          item: filtered[i],
-                          onRefresh: () => ref.invalidate(ingredientsProvider),
+                    : RefreshIndicator(
+                        color: _mint,
+                        onRefresh: _refresh,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+                          itemCount: filtered.length,
+                          itemBuilder: (ctx, i) => _IngredientCard(
+                            item: filtered[i],
+                            onRefresh: () => ref.invalidate(ingredientsProvider),
+                          ),
                         ),
                       ),
               ),
