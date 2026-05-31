@@ -269,6 +269,33 @@ class _IngredientDialogState extends State<IngredientDialog> {
     if (picked != null) setState(() => _emoji = picked);
   }
 
+  String? _validate() {
+    if (_nameCtrl.text.trim().isEmpty) return '재료 이름을 입력해주세요';
+    if (int.tryParse(_totalCtrl.text) == null) return '총 큐브 수를 숫자로 입력해주세요';
+    if (_unitType == 'weight') {
+      final w = int.tryParse(_weightCtrl.text.trim());
+      if (w == null || w <= 0) return '무게 단위 선택 시 큐브당 무게(g)를 입력해주세요';
+    }
+    return null;
+  }
+
+  void _submit() {
+    final error = _validate();
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: const Color(0xFFe63946),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+    Navigator.pop(context, toData());
+  }
+
   Map<String, dynamic> toData() => {
         'name': _nameCtrl.text.trim(),
         'emoji': _emoji,
@@ -414,7 +441,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, toData()),
+                          onPressed: _submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
