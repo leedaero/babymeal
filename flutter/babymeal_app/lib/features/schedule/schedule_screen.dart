@@ -156,8 +156,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   }
 
   Future<void> _addMeal(BuildContext context) async {
-    final data = await showDialog<Map<String, dynamic>>(
+    final data = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => MealDialog(initialDate: _selectedStr),
     );
     if (data == null) return;
