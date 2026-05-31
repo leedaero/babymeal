@@ -1,6 +1,9 @@
 // lib/features/inventory/inventory_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../core/push/fcm_service.dart';
 import 'ingredient_provider.dart';
 import 'ingredient_model.dart';
 import 'ingredient_dialog.dart';
@@ -62,7 +65,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
               decoration: BoxDecoration(color: _lightMint, borderRadius: BorderRadius.circular(12)),
               child: IconButton(
                 icon: const Icon(Icons.notifications_outlined, color: _green, size: 18),
-                onPressed: () {},
+                onPressed: () => _showPushStatus(context),
                 padding: EdgeInsets.zero,
               ),
             ),
@@ -175,6 +178,21 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
           },
         ),
       );
+
+  Future<void> _showPushStatus(BuildContext context) async {
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    final token = await FirebaseMessaging.instance.getToken();
+    if (!context.mounted) return;
+
+    final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PushStatusSheet(granted: granted, token: token),
+    );
+  }
 
   Future<void> _addIngredient(BuildContext context, WidgetRef ref) async {
     final data = await showDialog<Map<String, dynamic>>(
@@ -413,5 +431,193 @@ class _IngredientCard extends StatelessWidget {
             .showSnackBar(SnackBar(content: Text('로그 불러오기 실패: $e')));
       }
     }
+  }
+}
+
+class _PushStatusSheet extends StatefulWidget {
+  final bool granted;
+  final String? token;
+  const _PushStatusSheet({required this.granted, required this.token});
+
+  @override
+  State<_PushStatusSheet> createState() => _PushStatusSheetState();
+}
+
+class _PushStatusSheetState extends State<_PushStatusSheet> {
+  late bool _enabled;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.granted && widget.token != null;
+  }
+
+  Future<void> _toggle() async {
+    setState(() => _loading = true);
+    try {
+      if (_enabled) {
+        await FcmService.unregisterToken();
+        setState(() => _enabled = false);
+      } else {
+        await FcmService.registerToken();
+        setState(() => _enabled = true);
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: widget.granted ? _lightMint : const Color(0xFFffe5e7),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  widget.granted ? Icons.notifications_active : Icons.notifications_off,
+                  color: widget.granted ? _green : const Color(0xFFe63946),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.granted ? '알림 권한 허용됨' : '알림 권한 차단됨',
+                    style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w800,
+                      color: widget.granted ? _green : const Color(0xFFe63946),
+                    ),
+                  ),
+                  Text(
+                    widget.granted ? '시스템에서 알림을 받을 수 있어요' : '설정에서 알림 권한을 허용해주세요',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7FAF8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('푸시 알림 수신',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _green)),
+                    const SizedBox(height: 2),
+                    Text(
+                      _enabled ? '재고 부족·만료 알림을 받고 있어요' : '알림이 꺼져 있어요',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                _loading
+                    ? const SizedBox(
+                        width: 28, height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: _mint),
+                      )
+                    : Switch(
+                        value: _enabled,
+                        onChanged: widget.granted ? (_) => _toggle() : null,
+                        activeColor: _green,
+                        activeTrackColor: _lightMint,
+                      ),
+              ],
+            ),
+          ),
+          if (widget.token != null) ...[
+            const SizedBox(height: 16),
+            const Text('FCM 토큰', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey)),
+            const SizedBox(height: 6),
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: widget.token!));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('토큰이 복사되었어요'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.all(16),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7FAF8),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _lightMint),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.token!,
+                        style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'monospace'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.copy, size: 16, color: _mint),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (!widget.granted) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () async {
+                  await FirebaseMessaging.instance.requestPermission();
+                  if (context.mounted) Navigator.pop(context);
+                },
+                child: const Text('알림 권한 요청', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
