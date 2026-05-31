@@ -6,6 +6,227 @@ const _green = Color(0xFF2d6a4f);
 const _mint = Color(0xFF52b788);
 const _lightMint = Color(0xFFd8f3dc);
 
+// ── 이모지 데이터 ──────────────────────────────────────────
+const _emojiList = [
+  // 채소
+  {'e': '🥕', 'ko': '당근', 'en': 'carrot'},
+  {'e': '🥦', 'ko': '브로콜리', 'en': 'broccoli'},
+  {'e': '🌽', 'ko': '옥수수', 'en': 'corn'},
+  {'e': '🍠', 'ko': '고구마', 'en': 'sweet potato'},
+  {'e': '🥬', 'ko': '청경채', 'en': 'bok choy'},
+  {'e': '🧅', 'ko': '양파', 'en': 'onion'},
+  {'e': '🧄', 'ko': '마늘', 'en': 'garlic'},
+  {'e': '🥒', 'ko': '오이', 'en': 'cucumber'},
+  {'e': '🥑', 'ko': '아보카도', 'en': 'avocado'},
+  {'e': '🫑', 'ko': '파프리카', 'en': 'bell pepper'},
+  {'e': '🍆', 'ko': '가지', 'en': 'eggplant'},
+  {'e': '🥔', 'ko': '감자', 'en': 'potato'},
+  {'e': '🍅', 'ko': '토마토', 'en': 'tomato'},
+  {'e': '🫛', 'ko': '완두콩', 'en': 'peas'},
+  {'e': '🌶', 'ko': '고추', 'en': 'pepper'},
+  {'e': '🥗', 'ko': '채소', 'en': 'salad'},
+  // 과일
+  {'e': '🍎', 'ko': '사과', 'en': 'apple'},
+  {'e': '🍏', 'ko': '청사과', 'en': 'green apple'},
+  {'e': '🍌', 'ko': '바나나', 'en': 'banana'},
+  {'e': '🍊', 'ko': '귤', 'en': 'orange'},
+  {'e': '🍋', 'ko': '레몬', 'en': 'lemon'},
+  {'e': '🍓', 'ko': '딸기', 'en': 'strawberry'},
+  {'e': '🍇', 'ko': '포도', 'en': 'grape'},
+  {'e': '🥝', 'ko': '키위', 'en': 'kiwi'},
+  {'e': '🍑', 'ko': '복숭아', 'en': 'peach'},
+  {'e': '🫐', 'ko': '블루베리', 'en': 'blueberry'},
+  {'e': '🍒', 'ko': '체리', 'en': 'cherry'},
+  {'e': '🥭', 'ko': '망고', 'en': 'mango'},
+  {'e': '🍍', 'ko': '파인애플', 'en': 'pineapple'},
+  {'e': '🍐', 'ko': '배', 'en': 'pear'},
+  {'e': '🍈', 'ko': '멜론', 'en': 'melon'},
+  // 단백질
+  {'e': '🥩', 'ko': '소고기', 'en': 'beef'},
+  {'e': '🍗', 'ko': '닭고기', 'en': 'chicken'},
+  {'e': '🍖', 'ko': '돼지고기', 'en': 'pork'},
+  {'e': '🐟', 'ko': '생선', 'en': 'fish'},
+  {'e': '🦐', 'ko': '새우', 'en': 'shrimp'},
+  {'e': '🥚', 'ko': '달걀', 'en': 'egg'},
+  {'e': '🍳', 'ko': '계란후라이', 'en': 'fried egg'},
+  {'e': '🫘', 'ko': '콩', 'en': 'beans'},
+  {'e': '🥜', 'ko': '땅콩', 'en': 'peanut'},
+  // 곡물
+  {'e': '🌾', 'ko': '쌀', 'en': 'rice'},
+  {'e': '🍚', 'ko': '밥', 'en': 'cooked rice'},
+  {'e': '🍞', 'ko': '식빵', 'en': 'bread'},
+  {'e': '🫓', 'ko': '빵', 'en': 'flatbread'},
+  {'e': '🌰', 'ko': '밤', 'en': 'chestnut'},
+  {'e': '🥣', 'ko': '오트밀', 'en': 'oatmeal'},
+  // 유제품
+  {'e': '🥛', 'ko': '우유', 'en': 'milk'},
+  {'e': '🧀', 'ko': '치즈', 'en': 'cheese'},
+  {'e': '🧈', 'ko': '버터', 'en': 'butter'},
+  {'e': '🫙', 'ko': '요거트', 'en': 'yogurt'},
+  // 기타
+  {'e': '🍯', 'ko': '꿀', 'en': 'honey'},
+  {'e': '🫚', 'ko': '기름', 'en': 'oil'},
+  {'e': '🧂', 'ko': '소금', 'en': 'salt'},
+  {'e': '🍵', 'ko': '차', 'en': 'tea'},
+];
+
+// ── 이모지 검색 다이얼로그 (B안) ──────────────────────────
+class _EmojiPickerDialog extends StatefulWidget {
+  const _EmojiPickerDialog();
+  @override
+  State<_EmojiPickerDialog> createState() => _EmojiPickerDialogState();
+}
+
+class _EmojiPickerDialogState extends State<_EmojiPickerDialog> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  List<Map<String, String>> get _results {
+    if (_query.isEmpty) return List<Map<String, String>>.from(_emojiList);
+    final q = _query.toLowerCase();
+    return _emojiList.where((item) {
+      return (item['ko'] ?? '').contains(q) ||
+          (item['en'] ?? '').toLowerCase().contains(q);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final results = _results;
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 60),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 타이틀
+            Row(
+              children: [
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(color: _lightMint, borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.emoji_emotions_outlined, color: _green, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text('이모지 검색',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _green)),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // 검색창
+            TextField(
+              controller: _searchCtrl,
+              autofocus: true,
+              onChanged: (v) => setState(() => _query = v),
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: '당근, chicken...',
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, color: _mint, size: 20),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        onPressed: () => setState(() {
+                          _searchCtrl.clear();
+                          _query = '';
+                        }),
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFFF7FAF8),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _lightMint),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _lightMint),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _mint, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // 결과 개수
+            Text(
+              results.isEmpty ? '검색 결과 없음' : '${results.length}개',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            const SizedBox(height: 6),
+
+            // 결과 리스트
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: results.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text('😅 찾는 재료가 없어요', style: TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: results.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+                      itemBuilder: (_, i) {
+                        final item = results[i];
+                        return InkWell(
+                          onTap: () => Navigator.pop(context, item['e']),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 42, height: 42,
+                                  decoration: BoxDecoration(
+                                    color: _lightMint,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(item['e']!, style: const TextStyle(fontSize: 22)),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item['ko']!,
+                                        style: const TextStyle(
+                                          fontSize: 14, fontWeight: FontWeight.w700, color: _green)),
+                                    Text(item['en']!,
+                                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 재료 추가/수정 다이얼로그 ────────────────────────────
 class IngredientDialog extends StatefulWidget {
   final Ingredient? existing;
   const IngredientDialog({super.key, this.existing});
@@ -16,11 +237,11 @@ class IngredientDialog extends StatefulWidget {
 
 class _IngredientDialogState extends State<IngredientDialog> {
   final _nameCtrl = TextEditingController();
-  final _emojiCtrl = TextEditingController();
   final _totalCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
   String _unitType = 'weight';
+  String _emoji = '';
 
   bool get _isEdit => widget.existing != null;
 
@@ -30,7 +251,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
     final e = widget.existing;
     if (e != null) {
       _nameCtrl.text = e.name;
-      _emojiCtrl.text = e.emoji;
+      _emoji = e.emoji;
       _totalCtrl.text = e.totalCubes.toString();
       _weightCtrl.text = e.weightPerCube?.toString() ?? '';
       _dateCtrl.text = e.createdAt;
@@ -40,9 +261,17 @@ class _IngredientDialogState extends State<IngredientDialog> {
     }
   }
 
+  Future<void> _pickEmoji() async {
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (_) => const _EmojiPickerDialog(),
+    );
+    if (picked != null) setState(() => _emoji = picked);
+  }
+
   Map<String, dynamic> toData() => {
         'name': _nameCtrl.text.trim(),
-        'emoji': _emojiCtrl.text.trim(),
+        'emoji': _emoji,
         'color': '#4BA3E3',
         'created_at': _dateCtrl.text.trim(),
         'total_cubes': int.tryParse(_totalCtrl.text) ?? 0,
@@ -78,17 +307,33 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 ),
                 const SizedBox(height: 24),
 
-                // 이모지 + 이름 가로 배치
+                // 이모지 버튼 + 이름 가로 배치
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 72,
-                      child: _buildField(
-                        controller: _emojiCtrl,
-                        label: '이모지',
-                        hint: '🥕',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24),
+                    // 이모지 탭 버튼
+                    GestureDetector(
+                      onTap: _pickEmoji,
+                      child: Container(
+                        width: 72, height: 58,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7FAF8),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _lightMint),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _emoji.isEmpty
+                                ? const Icon(Icons.add_reaction_outlined, color: _mint, size: 22)
+                                : Text(_emoji, style: const TextStyle(fontSize: 28)),
+                            const SizedBox(height: 2),
+                            Text(
+                              _emoji.isEmpty ? '이모지' : '변경',
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -104,7 +349,6 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 ),
                 const SizedBox(height: 14),
 
-                // 제작일
                 _buildField(
                   controller: _dateCtrl,
                   label: '제작일',
@@ -113,7 +357,6 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 ),
                 const SizedBox(height: 14),
 
-                // 총 큐브 수
                 _buildField(
                   controller: _totalCtrl,
                   label: '총 큐브 수',
@@ -123,7 +366,6 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 ),
                 const SizedBox(height: 14),
 
-                // 단위 선택
                 const Text('단위 유형',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _mint)),
                 const SizedBox(height: 8),
@@ -136,7 +378,6 @@ class _IngredientDialogState extends State<IngredientDialog> {
                 ),
                 const SizedBox(height: 14),
 
-                // 큐브당 무게
                 if (_unitType == 'weight') ...[
                   _buildField(
                     controller: _weightCtrl,
@@ -148,7 +389,6 @@ class _IngredientDialogState extends State<IngredientDialog> {
                   const SizedBox(height: 14),
                 ],
 
-                // 버튼
                 Row(
                   children: [
                     Expanded(
@@ -226,14 +466,10 @@ class _IngredientDialogState extends State<IngredientDialog> {
     String? hint,
     IconData? icon,
     TextInputType? keyboard,
-    TextAlign textAlign = TextAlign.start,
-    TextStyle? style,
   }) =>
       TextField(
         controller: controller,
         keyboardType: keyboard,
-        textAlign: textAlign,
-        style: style,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
@@ -259,7 +495,7 @@ class _IngredientDialogState extends State<IngredientDialog> {
 
   @override
   void dispose() {
-    for (final c in [_nameCtrl, _emojiCtrl, _totalCtrl, _weightCtrl, _dateCtrl]) {
+    for (final c in [_nameCtrl, _totalCtrl, _weightCtrl, _dateCtrl]) {
       c.dispose();
     }
     super.dispose();
