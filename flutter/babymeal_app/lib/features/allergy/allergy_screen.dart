@@ -271,13 +271,20 @@ class _AllergySheetState extends State<_AllergySheet> {
 
   void _submit() {
     if (_nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('재료명을 입력해주세요'),
-        backgroundColor: const Color(0xFFe63946),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ));
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: const Text('재료명을 입력해주세요'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인',
+                  style: TextStyle(color: Color(0xFF2d6a4f))),
+            ),
+          ],
+        ),
+      );
       return;
     }
     Navigator.pop(context, {
