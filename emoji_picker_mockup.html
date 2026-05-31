@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이모지 피커 시안</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Noto Sans KR', sans-serif; background: #1a1a2e; padding: 30px 20px; }
+
+  h1 { color: #fff; text-align: center; margin-bottom: 8px; font-size: 20px; }
+  p.sub { color: #aaa; text-align: center; margin-bottom: 36px; font-size: 13px; }
+
+  .options-row {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .option-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .option-label {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .option-desc {
+    color: #aaa;
+    font-size: 12px;
+    text-align: center;
+    max-width: 200px;
+    line-height: 1.5;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 220px;
+    height: 460px;
+    background: #f7faf8;
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+    border: 3px solid #333;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  /* ─── SHARED BASE (background ingredient dialog) ─── */
+  .base-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── OPTION A: 바텀 시트 ─── */
+  .bottom-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 14px 16px;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+  .sheet-title { font-size: 13px; font-weight: 800; color: #2d6a4f; margin-bottom: 10px; }
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: #f7faf8;
+    border: 1.5px solid #d8f3dc;
+    border-radius: 10px;
+    padding: 7px 10px;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .search-box span { font-size: 11px; color: #aaa; }
+  .search-box input-mock { flex:1; font-size: 11px; color: #333; }
+
+  .cat-tabs {
+    display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto;
+  }
+  .cat-tab {
+    flex-shrink: 0;
+    font-size: 10px; font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 20px;
+    background: #d8f3dc;
+    color: #2d6a4f;
+  }
+  .cat-tab.active { background: #2d6a4f; color: #fff; }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .emoji-cell {
+    width: 100%; aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    border-radius: 10px;
+    background: #f7faf8;
+    cursor: pointer;
+    position: relative;
+  }
+  .emoji-cell.selected { background: #d8f3dc; outline: 2px solid #52b788; }
+  .emoji-cell-label {
+    position: absolute;
+    bottom: 1px; left: 0; right: 0;
+    font-size: 7px;
+    color: #888;
+    text-align: center;
+  }
+
+  /* ─── OPTION B: 검색 중심 다이얼로그 ─── */
+  .search-dialog {
+    background: #fff;
+    border-radius: 18px;
+    padding: 14px;
+    width: 190px;
+    max-height: 380px;
+    display: flex; flex-direction: column;
+  }
+  .dialog-title { font-size: 13px; font-weight: 800; color: #2d6a4f; margin-bottom: 10px; }
+  .big-search {
+    background: #f7faf8;
+    border: 2px solid #52b788;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #333;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px;
+  }
+  .search-cursor { display: inline-block; width: 1px; height: 14px; background: #52b788; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+  .result-label { font-size: 9px; color: #aaa; margin-bottom: 6px; }
+  .result-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
+  .result-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .result-row:hover, .result-row.selected { background: #d8f3dc; }
+  .result-emoji { font-size: 18px; }
+  .result-name { font-size: 11px; color: #333; font-weight: 600; }
+  .result-en { font-size: 9px; color: #aaa; }
+
+  /* ─── OPTION C: 카테고리 + 큰 그리드 ─── */
+  .cat-dialog {
+    background: #fff;
+    border-radius: 18px;
+    padding: 14px;
+    width: 190px;
+    position: absolute;
+    bottom: 10px; left: 15px; right: 15px;
+    width: auto;
+  }
+  .cat-dialog-title { font-size: 13px; font-weight: 800; color: #2d6a4f; margin-bottom: 10px; }
+
+  .mini-search {
+    background: #f7faf8;
+    border: 1.5px solid #d8f3dc;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 10px;
+    color: #aaa;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .tab-row { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tab { font-size: 9px; padding: 3px 7px; border-radius: 10px; font-weight: 700; }
+  .tab.on { background: #2d6a4f; color: #fff; }
+  .tab.off { background: #f0f0f0; color: #888; }
+
+  .big-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .big-cell {
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 6px 2px;
+    border-radius: 10px;
+    background: #f7faf8;
+    gap: 2px;
+  }
+  .big-cell.sel { background: #d8f3dc; outline: 2px solid #52b788; }
+  .big-cell .e { font-size: 20px; }
+  .big-cell .n { font-size: 8px; color: #555; font-weight: 600; text-align: center; }
+
+  /* Green background for phone */
+  .phone-bg {
+    position: absolute; inset: 0;
+    background: #f7faf8;
+  }
+  .phone-appbar {
+    height: 40px;
+    background: #fff;
+    display: flex; align-items: center;
+    padding: 0 12px;
+    font-size: 13px; font-weight: 800; color: #1b4332;
+    border-bottom: 1px solid #eee;
+  }
+
+  .dim { position: absolute; inset: 0; background: rgba(0,0,0,0.4); top: 40px; }
+</style>
+</head>
+<body>
+<h1>🎨 이모지 피커 시안</h1>
+<p class="sub">이모지 버튼 탭 시 나타나는 팝업 3가지 안</p>
+
+<div class="options-row">
+
+  <!-- ── OPTION A ── -->
+  <div class="option-wrap">
+    <div class="option-label">안 A — 바텀 시트</div>
+    <div class="phone">
+      <div class="phone-bg"></div>
+      <div class="phone-appbar">재고 관리</div>
+      <div class="dim"></div>
+
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">🔍 이모지 선택</div>
+
+        <div class="search-box">
+          <span>🔍</span>
+          <span style="font-size:11px;color:#333;">당근 검색 중...</span>
+          <span class="search-cursor"></span>
+        </div>
+
+        <div class="cat-tabs">
+          <div class="cat-tab active">채소</div>
+          <div class="cat-tab">과일</div>
+          <div class="cat-tab">단백질</div>
+          <div class="cat-tab">곡물</div>
+        </div>
+
+        <div class="emoji-grid">
+          <div class="emoji-cell selected">🥕<span class="emoji-cell-label">당근</span></div>
+          <div class="emoji-cell">🥦<span class="emoji-cell-label">브로콜리</span></div>
+          <div class="emoji-cell">🌽<span class="emoji-cell-label">옥수수</span></div>
+          <div class="emoji-cell">🍠<span class="emoji-cell-label">고구마</span></div>
+          <div class="emoji-cell">🥬<span class="emoji-cell-label">청경채</span></div>
+          <div class="emoji-cell">🧅<span class="emoji-cell-label">양파</span></div>
+          <div class="emoji-cell">🥒<span class="emoji-cell-label">오이</span></div>
+          <div class="emoji-cell">🥑<span class="emoji-cell-label">아보카도</span></div>
+          <div class="emoji-cell">🫑<span class="emoji-cell-label">파프리카</span></div>
+          <div class="emoji-cell">🍆<span class="emoji-cell-label">가지</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="option-desc">화면 아래에서 올라오는 시트.<br>카테고리 탭 + 이름 표시 그리드.<br>한글 검색 지원.</div>
+  </div>
+
+  <!-- ── OPTION B ── -->
+  <div class="option-wrap">
+    <div class="option-label">안 B — 한글 검색 다이얼로그</div>
+    <div class="phone">
+      <div class="phone-bg"></div>
+      <div class="phone-appbar">재고 관리</div>
+      <div class="dim"></div>
+
+      <div style="position:absolute;inset:0;top:40px;display:flex;align-items:center;justify-content:center;">
+        <div class="search-dialog">
+          <div class="dialog-title">🔍 이모지 검색</div>
+          <div class="big-search">
+            <span>🔍</span>
+            <span>당근</span>
+            <span class="search-cursor"></span>
+          </div>
+          <div class="result-label">검색 결과 4개</div>
+          <div class="result-list">
+            <div class="result-row selected">
+              <div class="result-emoji">🥕</div>
+              <div>
+                <div class="result-name">당근</div>
+                <div class="result-en">carrot</div>
+              </div>
+            </div>
+            <div class="result-row">
+              <div class="result-emoji">🍠</div>
+              <div>
+                <div class="result-name">고구마</div>
+                <div class="result-en">sweet potato</div>
+              </div>
+            </div>
+            <div class="result-row">
+              <div class="result-emoji">🥦</div>
+              <div>
+                <div class="result-name">브로콜리</div>
+                <div class="result-en">broccoli</div>
+              </div>
+            </div>
+            <div class="result-row">
+              <div class="result-emoji">🌽</div>
+              <div>
+                <div class="result-name">옥수수</div>
+                <div class="result-en">corn</div>
+              </div>
+            </div>
+            <div class="result-row">
+              <div class="result-emoji">🧅</div>
+              <div>
+                <div class="result-name">양파</div>
+                <div class="result-en">onion</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-desc">가운데 팝업.<br>한글 이름으로 검색 → 리스트로 결과 표시.<br>이름 + 영어 표기 포함.</div>
+  </div>
+
+  <!-- ── OPTION C ── -->
+  <div class="option-wrap">
+    <div class="option-label">안 C — 카테고리 큰 그리드</div>
+    <div class="phone">
+      <div class="phone-bg"></div>
+      <div class="phone-appbar">재고 관리</div>
+      <div class="dim"></div>
+
+      <div style="position:absolute;inset:0;top:40px;display:flex;align-items:flex-end;padding:10px;">
+        <div class="cat-dialog" style="width:100%;">
+          <div class="cat-dialog-title">이모지 선택</div>
+
+          <div class="mini-search">
+            <span>🔍</span>
+            <span>한글로 검색...</span>
+          </div>
+
+          <div class="tab-row">
+            <div class="tab on">🥦채소</div>
+            <div class="tab off">🍎과일</div>
+            <div class="tab off">🥩단백질</div>
+          </div>
+
+          <div class="big-grid">
+            <div class="big-cell sel"><div class="e">🥕</div><div class="n">당근</div></div>
+            <div class="big-cell"><div class="e">🥦</div><div class="n">브로콜리</div></div>
+            <div class="big-cell"><div class="e">🌽</div><div class="n">옥수수</div></div>
+            <div class="big-cell"><div class="e">🍠</div><div class="n">고구마</div></div>
+            <div class="big-cell"><div class="e">🥬</div><div class="n">청경채</div></div>
+            <div class="big-cell"><div class="e">🧅</div><div class="n">양파</div></div>
+            <div class="big-cell"><div class="e">🥒</div><div class="n">오이</div></div>
+            <div class="big-cell"><div class="e">🥑</div><div class="n">아보카도</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-desc">바텀 시트 + 큰 셀 그리드.<br>이름이 셀 안에 바로 표시됨.<br>검색 + 카테고리 탭 둘 다 지원.</div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:40px;color:#aaa;font-size:12px;">
+  A: 바텀시트 + 작은 그리드 &nbsp;|&nbsp; B: 중앙 팝업 + 검색 리스트 &nbsp;|&nbsp; C: 바텀시트 + 큰 셀
+</div>
+
+</body>
+</html>

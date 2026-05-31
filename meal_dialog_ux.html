@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>식단 추가 UX 시안 3종</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Noto Sans KR', sans-serif;
+  background: #0f0f0f;
+  padding: 36px 20px 60px;
+}
+h1 { color: #fff; text-align: center; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
+.sub { color: #555; text-align: center; margin-bottom: 40px; font-size: 13px; }
+
+.row { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.col-title { color: #fff; font-size: 15px; font-weight: 800; }
+.col-desc { color: #777; font-size: 11px; text-align: center; max-width: 210px; line-height: 1.7; }
+.col-pros { color: #52b788; font-size: 10px; text-align: center; max-width: 210px; line-height: 1.8; }
+
+/* ── Phone ── */
+.phone {
+  width: 220px; height: 480px;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 3px solid #222;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  position: relative;
+  background: #f7faf8;
+  display: flex; flex-direction: column;
+}
+
+/* shared calendar bg */
+.cal-bg {
+  flex: 1;
+  background: #fff;
+  display: flex; flex-direction: column;
+}
+.cal-appbar {
+  height: 40px; background: #fff;
+  display: flex; align-items: center; padding: 0 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px; font-weight: 800; color: #1b4332;
+}
+.cal-body {
+  flex: 1;
+  padding: 8px;
+  background: #fff;
+}
+.cal-row { display: flex; justify-content: space-between; padding: 2px 0; }
+.cal-day { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #555; }
+.cal-day.today { background: #2d6a4f; color: #fff; font-weight: 800; }
+.cal-day.dot::after { content: '•'; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); color: #52b788; font-size: 8px; }
+.cal-day { position: relative; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,0.38); z-index: 1; }
+
+/* colors */
+:root {
+  --g: #2d6a4f;
+  --m: #52b788;
+  --lm: #d8f3dc;
+}
+
+/* ─────────────────────────────────────────
+   A: 바텀 시트
+───────────────────────────────────────── */
+.sheet-a {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  display: flex; flex-direction: column;
+  height: 86%;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+}
+.sheet-handle {
+  width: 36px; height: 4px; background: #ddd; border-radius: 2px;
+  margin: 10px auto 0;
+}
+.sheet-header {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.sheet-title { font-size: 14px; font-weight: 800; color: #2d6a4f; }
+.sheet-date { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+/* 끼니 탭 */
+.meal-tabs { display: flex; gap: 6px; margin-top: 8px; }
+.meal-tab { flex: 1; padding: 5px 0; border-radius: 10px; text-align: center; font-size: 10px; font-weight: 700; }
+.meal-tab.on { background: #2d6a4f; color: #fff; }
+.meal-tab.off { background: #f0f0f0; color: #888; }
+
+/* 선택된 재료 고정 바 */
+.selected-bar {
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.selected-bar-label { font-size: 9px; color: #aaa; margin-bottom: 5px; font-weight: 600; }
+.selected-chips { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
+.selected-chip {
+  flex-shrink: 0;
+  background: #d8f3dc;
+  border-radius: 20px;
+  padding: 3px 8px 3px 6px;
+  font-size: 10px; font-weight: 700; color: #2d6a4f;
+  display: flex; align-items: center; gap: 3px;
+}
+.selected-chip .x { color: #aaa; font-size: 9px; }
+
+/* 검색 */
+.search-a {
+  margin: 8px 14px 6px;
+  background: #f7faf8;
+  border: 1.5px solid #d8f3dc;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: #bbb;
+}
+
+/* 재료 그리드 - 스크롤 */
+.ingr-scroll {
+  flex: 1; overflow-y: auto;
+  padding: 4px 14px 8px;
+}
+.ingr-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.ingr-chip {
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 10px; font-weight: 600; color: #333;
+  background: #fff;
+  white-space: nowrap;
+}
+.ingr-chip.sel {
+  background: #d8f3dc; border-color: #52b788; color: #2d6a4f;
+}
+
+/* 하단 버튼 */
+.sheet-footer {
+  padding: 8px 14px 12px;
+  display: flex; gap: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+.btn-cancel {
+  flex: 1; padding: 10px; border-radius: 12px;
+  border: 1.5px solid #d8f3dc;
+  background: #fff; font-size: 11px; font-weight: 700; color: #aaa;
+  text-align: center;
+}
+.btn-save {
+  flex: 2; padding: 10px; border-radius: 12px;
+  background: linear-gradient(90deg, #52b788, #2d6a4f);
+  font-size: 11px; font-weight: 700; color: #fff;
+  text-align: center;
+}
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px; padding: 0 5px;
+  font-size: 10px; margin-left: 4px;
+}
+
+/* ─────────────────────────────────────────
+   B: 선택/목록 분할 다이얼로그
+───────────────────────────────────────── */
+.dialog-b {
+  position: absolute; inset: 16px 10px; z-index: 2;
+  background: #fff;
+  border-radius: 20px;
+  display: flex; flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+.dlg-header {
+  padding: 14px 14px 10px;
+  background: linear-gradient(135deg, #52b788, #2d6a4f);
+}
+.dlg-title { font-size: 13px; font-weight: 800; color: #fff; }
+.dlg-date { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+.dlg-tabs { display: flex; gap: 5px; margin-top: 8px; }
+.dlg-tab { flex: 1; padding: 4px 0; border-radius: 8px; text-align: center; font-size: 10px; font-weight: 700; }
+.dlg-tab.on { background: rgba(255,255,255,0.9); color: #2d6a4f; }
+.dlg-tab.off { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+
+/* 선택된 재료 패널 */
+.selected-panel {
+  padding: 8px 12px 6px;
+  border-bottom: 1.5px solid #f0f0f0;
+  min-height: 72px; max-height: 72px;
+}
+.panel-label { font-size: 9px; color: #aaa; font-weight: 700; margin-bottom: 5px; }
+.selected-wrap { display: flex; flex-wrap: wrap; gap: 4px; overflow: hidden; max-height: 44px; }
+.sel-pill {
+  background: #d8f3dc; border-radius: 20px;
+  padding: 3px 8px; font-size: 9px; font-weight: 700; color: #2d6a4f;
+  display: flex; align-items: center; gap: 2px;
+}
+
+/* 재료 목록 패널 */
+.ingr-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.panel-search {
+  margin: 6px 12px 4px;
+  background: #f7faf8; border: 1.5px solid #d8f3dc;
+  border-radius: 9px; padding: 5px 9px;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: #bbb;
+}
+.ingr-list { flex: 1; overflow-y: auto; padding: 4px 12px 0; }
+.ingr-row {
+  display: flex; align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+.ingr-emoji { font-size: 16px; width: 24px; text-align: center; }
+.ingr-name { flex: 1; font-size: 11px; font-weight: 600; color: #333; margin-left: 8px; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 6px;
+  border: 2px solid #d0d0d0;
+  display: flex; align-items: center; justify-content: center;
+}
+.check-box.on { background: #2d6a4f; border-color: #2d6a4f; }
+.check-box.on::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 800; }
+
+.dlg-footer {
+  padding: 8px 12px 12px;
+  display: flex; gap: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ─────────────────────────────────────────
+   C: 풀스크린 모달
+───────────────────────────────────────── */
+.fullscreen-c {
+  position: absolute; inset: 0; z-index: 2;
+  background: #f7faf8;
+  display: flex; flex-direction: column;
+}
+.fs-appbar {
+  height: 48px; background: #fff;
+  display: flex; align-items: center; padding: 0 12px;
+  gap: 8px; border-bottom: 1px solid #eee;
+}
+.fs-back { font-size: 18px; color: #2d6a4f; }
+.fs-title { flex: 1; font-size: 13px; font-weight: 800; color: #1b4332; }
+.fs-save-btn {
+  background: #2d6a4f; color: #fff;
+  border-radius: 10px; padding: 5px 10px;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; gap: 4px;
+}
+.fs-save-cnt { background: rgba(255,255,255,0.25); border-radius: 6px; padding: 1px 5px; font-size: 9px; }
+
+.fs-sub { padding: 8px 14px 6px; display: flex; align-items: center; gap: 8px; }
+.fs-date-tag { background: #d8f3dc; border-radius: 8px; padding: 3px 8px; font-size: 9px; font-weight: 700; color: #2d6a4f; }
+.fs-meal-tabs { display: flex; gap: 5px; }
+.fs-tab { padding: 3px 9px; border-radius: 8px; font-size: 9px; font-weight: 700; }
+.fs-tab.on { background: #2d6a4f; color: #fff; }
+.fs-tab.off { background: #e8e8e8; color: #888; }
+
+.fs-search {
+  margin: 0 14px 8px;
+  background: #fff; border: 1.5px solid #d8f3dc;
+  border-radius: 11px; padding: 7px 10px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: #bbb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.fs-grid-wrap { flex: 1; overflow-y: auto; padding: 0 14px; }
+.fs-grid { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 80px; }
+.fs-chip {
+  padding: 6px 11px; border-radius: 11px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 10px; font-weight: 600; color: #444;
+  background: #fff; white-space: nowrap;
+}
+.fs-chip.sel {
+  background: #d8f3dc; border-color: #52b788; color: #2d6a4f;
+  box-shadow: 0 2px 6px rgba(82,183,136,0.2);
+}
+
+/* 하단 선택 고정 스트립 */
+.fs-strip {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #fff;
+  border-top: 1.5px solid #e8f5ee;
+  padding: 8px 14px 10px;
+}
+.fs-strip-label { font-size: 9px; color: #aaa; margin-bottom: 5px; font-weight: 600; }
+.fs-strip-row { display: flex; gap: 5px; overflow-x: auto; }
+.fs-strip-chip {
+  flex-shrink: 0; background: #d8f3dc; border-radius: 20px;
+  padding: 3px 8px; font-size: 9px; font-weight: 700; color: #2d6a4f;
+}
+</style>
+</head>
+<body>
+
+<h1>🍽 식단 추가 UX 시안 3종</h1>
+<p class="sub">재료가 많아도 넘치지 않는 레이아웃 설계</p>
+
+<div class="row">
+
+  <!-- ════════ A: 바텀 시트 ════════ -->
+  <div class="col">
+    <div class="col-title">A — 바텀 시트</div>
+    <div class="phone">
+      <!-- 달력 배경 -->
+      <div class="cal-appbar">식단 관리</div>
+      <div class="cal-body">
+        <div class="cal-row">
+          <div class="cal-day" style="color:#aaa;font-size:9px">일</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">월</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">화</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">수</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">목</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">금</div>
+          <div class="cal-day" style="color:#aaa;font-size:9px">토</div>
+        </div>
+        <div class="cal-row">
+          <div class="cal-day">25</div><div class="cal-day">26</div><div class="cal-day">27</div>
+          <div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day dot">30</div>
+          <div class="cal-day today">31</div>
+        </div>
+      </div>
+      <div class="dim"></div>
+
+      <!-- 바텀 시트 -->
+      <div class="sheet-a">
+        <div class="sheet-handle"></div>
+
+        <!-- 헤더: 제목 + 끼니 탭 -->
+        <div class="sheet-header">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="sheet-title">식단 추가</div>
+              <div class="sheet-date">2026-05-31</div>
+            </div>
+          </div>
+          <div class="meal-tabs" style="margin-top:8px">
+            <div class="meal-tab on">🌅 아침</div>
+            <div class="meal-tab off">☀️ 점심</div>
+            <div class="meal-tab off">🌙 저녁</div>
+          </div>
+        </div>
+
+        <!-- 선택된 재료 고정 바 -->
+        <div class="selected-bar">
+          <div class="selected-bar-label">선택된 재료 3개</div>
+          <div class="selected-chips">
+            <div class="selected-chip">🥕 당근 <span class="x">✕</span></div>
+            <div class="selected-chip">🥦 브로콜리 <span class="x">✕</span></div>
+            <div class="selected-chip">🥩 소고기 <span class="x">✕</span></div>
+          </div>
+        </div>
+
+        <!-- 검색 -->
+        <div class="search-a">🔍 재료 검색...</div>
+
+        <!-- 재료 그리드 (스크롤) -->
+        <div class="ingr-scroll">
+          <div class="ingr-grid">
+            <div class="ingr-chip sel">🥕 당근</div>
+            <div class="ingr-chip">🥚 계란</div>
+            <div class="ingr-chip">🍠 고구마</div>
+            <div class="ingr-chip">🟡 노른자</div>
+            <div class="ingr-chip">🎃 단호박</div>
+            <div class="ingr-chip sel">🥦 브로콜리</div>
+            <div class="ingr-chip">🥬 청경채</div>
+            <div class="ingr-chip sel">🥩 소고기</div>
+            <div class="ingr-chip">🍅 토마토</div>
+            <div class="ingr-chip">🧅 양파</div>
+            <div class="ingr-chip">🥑 아보카도</div>
+            <div class="ingr-chip">🍎 사과</div>
+            <div class="ingr-chip">🐟 생선</div>
+            <div class="ingr-chip">🫛 완두콩</div>
+          </div>
+        </div>
+
+        <!-- 하단 버튼 -->
+        <div class="sheet-footer">
+          <div class="btn-cancel">취소</div>
+          <div class="btn-save">저장 <span class="badge">3</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-pros">✅ 재료 아무리 많아도 OK<br>✅ 선택 현황 항상 보임<br>✅ 버튼 항상 하단 고정</div>
+    <div class="col-desc">하단 시트로 화면 85% 활용.<br>선택된 재료는 상단 고정 바에 표시.<br>재료 목록만 독립 스크롤.</div>
+  </div>
+
+  <!-- ════════ B: 분할 다이얼로그 ════════ -->
+  <div class="col">
+    <div class="col-title">B — 선택/목록 분할</div>
+    <div class="phone">
+      <div class="cal-appbar">식단 관리</div>
+      <div class="cal-body" style="background:#f7faf8"></div>
+      <div class="dim"></div>
+
+      <div class="dialog-b">
+        <!-- 그라디언트 헤더 -->
+        <div class="dlg-header">
+          <div class="dlg-title">식단 추가</div>
+          <div class="dlg-date">2026-05-31</div>
+          <div class="dlg-tabs">
+            <div class="dlg-tab on">🌅 아침</div>
+            <div class="dlg-tab off">☀️ 점심</div>
+            <div class="dlg-tab off">🌙 저녁</div>
+          </div>
+        </div>
+
+        <!-- 선택된 재료 패널 (위) -->
+        <div class="selected-panel">
+          <div class="panel-label">✅ 선택된 재료 3개 (탭하면 해제)</div>
+          <div class="selected-wrap">
+            <div class="sel-pill">🥕 당근 ✕</div>
+            <div class="sel-pill">🥦 브로콜리 ✕</div>
+            <div class="sel-pill">🥩 소고기 ✕</div>
+          </div>
+        </div>
+
+        <!-- 재료 선택 패널 (아래, 스크롤) -->
+        <div class="ingr-panel">
+          <div class="panel-search">🔍 재료 검색...</div>
+          <div class="ingr-list">
+            <div class="ingr-row">
+              <div class="ingr-emoji">🥕</div>
+              <div class="ingr-name">당근</div>
+              <div class="check-box on"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🥚</div>
+              <div class="ingr-name">계란</div>
+              <div class="check-box"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🍠</div>
+              <div class="ingr-name">고구마</div>
+              <div class="check-box"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🥦</div>
+              <div class="ingr-name">브로콜리</div>
+              <div class="check-box on"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🥩</div>
+              <div class="ingr-name">소고기</div>
+              <div class="check-box on"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🧅</div>
+              <div class="ingr-name">양파</div>
+              <div class="check-box"></div>
+            </div>
+            <div class="ingr-row">
+              <div class="ingr-emoji">🥑</div>
+              <div class="ingr-name">아보카도</div>
+              <div class="check-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="dlg-footer">
+          <div class="btn-cancel">취소</div>
+          <div class="btn-save">저장 <span class="badge">3</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-pros">✅ 선택/미선택 명확히 분리<br>✅ 체크박스로 직관적 선택<br>✅ 고정 크기라 넘침 없음</div>
+    <div class="col-desc">다이얼로그를 위/아래로 분리.<br>위=선택된 재료, 아래=전체 목록.<br>체크박스 리스트로 스크롤.</div>
+  </div>
+
+  <!-- ════════ C: 풀스크린 ════════ -->
+  <div class="col">
+    <div class="col-title">C — 풀스크린 모달</div>
+    <div class="phone">
+      <div class="cal-appbar">식단 관리</div>
+      <div class="cal-body" style="background:#f7faf8"></div>
+
+      <div class="fullscreen-c">
+        <!-- 앱바 스타일 상단 -->
+        <div class="fs-appbar">
+          <div class="fs-back">←</div>
+          <div class="fs-title">식단 추가</div>
+          <div class="fs-save-btn">저장 <span class="fs-save-cnt">3</span></div>
+        </div>
+
+        <!-- 날짜 + 끼니 -->
+        <div class="fs-sub">
+          <div class="fs-date-tag">📅 2026-05-31</div>
+          <div class="fs-meal-tabs">
+            <div class="fs-tab on">아침</div>
+            <div class="fs-tab off">점심</div>
+            <div class="fs-tab off">저녁</div>
+          </div>
+        </div>
+
+        <!-- 검색 -->
+        <div class="fs-search">🔍 재료 검색...</div>
+
+        <!-- 재료 그리드 (스크롤, 하단 80px 패딩) -->
+        <div class="fs-grid-wrap">
+          <div class="fs-grid">
+            <div class="fs-chip sel">🥕 당근</div>
+            <div class="fs-chip">🥚 계란</div>
+            <div class="fs-chip">🍠 고구마</div>
+            <div class="fs-chip">🟡 노른자</div>
+            <div class="fs-chip">🎃 단호박</div>
+            <div class="fs-chip sel">🥦 브로콜리</div>
+            <div class="fs-chip">🥬 청경채</div>
+            <div class="fs-chip sel">🥩 소고기</div>
+            <div class="fs-chip">🍅 토마토</div>
+            <div class="fs-chip">🧅 양파</div>
+            <div class="fs-chip">🥑 아보카도</div>
+            <div class="fs-chip">🍎 사과</div>
+            <div class="fs-chip">🐟 생선</div>
+            <div class="fs-chip">🫛 완두콩</div>
+            <div class="fs-chip">🥬 배추</div>
+            <div class="fs-chip">🌽 옥수수</div>
+            <div class="fs-chip">🍐 배</div>
+          </div>
+        </div>
+
+        <!-- 하단 선택 스트립 -->
+        <div class="fs-strip">
+          <div class="fs-strip-label">선택됨 3개</div>
+          <div class="fs-strip-row">
+            <div class="fs-strip-chip">🥕 당근</div>
+            <div class="fs-strip-chip">🥦 브로콜리</div>
+            <div class="fs-strip-chip">🥩 소고기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-pros">✅ 최대 공간 활용<br>✅ 재료 수 제한 없음<br>✅ 상단 저장, 하단 선택 현황</div>
+    <div class="col-desc">전체 화면으로 전환.<br>상단 저장버튼(개수 표시),<br>하단에 선택된 재료 고정 스트립.</div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:48px;color:#333;font-size:11px;line-height:2.4">
+  A: 바텀 시트 (화면 85% 사용, 선택 고정 바)
+  &nbsp;·&nbsp;
+  B: 분할 다이얼로그 (선택/목록 상하 분리, 체크박스)
+  &nbsp;·&nbsp;
+  C: 풀스크린 (전체화면, 저장 앱바, 선택 하단 스트립)
+</div>
+
+</body>
+</html>

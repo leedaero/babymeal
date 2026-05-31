@@ -2,9 +2,20 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/api_client.dart';
+import 'notification_model.dart';
+import 'notification_store.dart';
 
 @pragma('vm:entry-point')
-Future<void> _bgHandler(RemoteMessage message) async {}
+Future<void> _bgHandler(RemoteMessage message) async {
+  final n = AppNotification(
+    id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+    title: message.notification?.title ?? '알림',
+    body: message.notification?.body ?? '',
+    type: (message.data['type'] ?? '') == 'schedule' ? 'schedule' : 'inventory',
+    createdAt: DateTime.now(),
+  );
+  await NotificationStore.add(n);
+}
 
 class FcmService {
   static final _localNotif = FlutterLocalNotificationsPlugin();

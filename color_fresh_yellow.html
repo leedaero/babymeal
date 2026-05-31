@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>상큼한 노란색 시안 3종</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Noto Sans KR', sans-serif;
+  background: #111;
+  padding: 36px 20px 60px;
+}
+h1 { color: #fff; text-align: center; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
+.sub { color: #666; text-align: center; margin-bottom: 40px; font-size: 13px; }
+
+.row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.col-title { color: #fff; font-size: 15px; font-weight: 800; }
+.col-desc { color: #888; font-size: 11px; text-align: center; max-width: 190px; line-height: 1.7; }
+
+.phone {
+  width: 210px; height: 450px;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 3px solid #2a2a2a;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  position: relative;
+  display: flex; flex-direction: column;
+}
+
+.palette { display: flex; gap: 5px; margin-top: 4px; }
+.swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #222; }
+
+/* ─────────────────────────────────────────
+   시안 1: 레몬 소다 Lemon Soda
+   bg #feffed  light #fffb9f  accent #f5e000  dark #5a5000
+───────────────────────────────────────── */
+.a { background: #feffed; }
+.a-bar {
+  height: 44px; background: #fff;
+  display: flex; align-items: center; padding: 0 14px;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #f5f0a0;
+}
+.a-bar-t { font-size: 14px; font-weight: 800; color: #4a4300; }
+.a-icon { width: 30px; height: 30px; border-radius: 9px; background: #fffb9f; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.a-body { flex: 1; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.a-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 7px; border: 1.5px solid #f5f0a0; }
+.a-chips { display: flex; gap: 5px; }
+.chip-on-a { font-size: 9px; font-weight: 800; padding: 4px 12px; border-radius: 20px; background: #f5e000; color: #4a4300; }
+.chip-off-a { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #fffb9f; color: #6b6200; }
+.a-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1.5px solid #f7f3b0; }
+.a-card.low { border-color: rgba(245,180,0,0.5); }
+.a-thumb { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #fffb9f; }
+.a-thumb.w { background: #fff5c0; }
+.a-name { font-size: 12px; font-weight: 800; color: #4a4300; }
+.a-sub { font-size: 10px; color: #b8a800; margin-top: 1px; }
+.a-badge { font-size: 8px; font-weight: 700; background: #fff5c0; color: #9a7000; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.a-cnt { font-size: 18px; font-weight: 800; color: #5a5000; }
+.a-cnt.low { color: #b87000; }
+.a-cnts { font-size: 9px; color: #aaa; }
+.a-fab { position: absolute; bottom: 58px; right: 12px; width: 42px; height: 42px; border-radius: 14px; background: #f5e000; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #4a4300; box-shadow: 0 4px 16px rgba(245,224,0,0.55); font-weight: 800; }
+.a-nav { height: 52px; background: #fff; border-top: 1.5px solid #f5f0a0; display: flex; align-items: center; justify-content: space-around; padding: 0 4px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.nav-item .ni { font-size: 16px; }
+.nav-item .nl { font-size: 8px; color: #bbb; font-weight: 600; }
+.a-ind { width: 30px; height: 24px; background: #fffb9f; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+/* ─────────────────────────────────────────
+   시안 2: 선샤인 팝 Sunshine Pop
+   bg #fffdf5  light #ffeea0  accent #ffcc00  dark #665200
+   → 더 진하고 생기 있는 선샤인 노란색
+───────────────────────────────────────── */
+.b { background: #fffdf5; }
+.b-bar {
+  height: 44px;
+  background: linear-gradient(120deg, #ffde00, #ffaa00);
+  display: flex; align-items: center; padding: 0 14px;
+  justify-content: space-between;
+}
+.b-bar-t { font-size: 14px; font-weight: 800; color: #4a3500; }
+.b-icon { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.b-body { flex: 1; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.b-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 7px; box-shadow: 0 2px 8px rgba(255,180,0,0.1); }
+.b-chips { display: flex; gap: 5px; }
+.chip-on-b { font-size: 9px; font-weight: 800; padding: 4px 12px; border-radius: 20px; background: #665200; color: #fff; }
+.chip-off-b { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #ffeea0; color: #665200; }
+.b-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(255,180,0,0.1); }
+.b-card.low { border: 1.5px solid rgba(255,160,0,0.4); }
+.b-thumb { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #ffeea0; }
+.b-thumb.w { background: #ffe088; }
+.b-name { font-size: 12px; font-weight: 800; color: #4a3500; }
+.b-sub { font-size: 10px; color: #cc9a00; margin-top: 1px; }
+.b-badge { font-size: 8px; font-weight: 700; background: #ffe088; color: #9a5e00; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.b-cnt { font-size: 18px; font-weight: 800; color: #665200; }
+.b-cnt.low { color: #c06800; }
+.b-cnts { font-size: 9px; color: #aaa; }
+.b-fab { position: absolute; bottom: 58px; right: 12px; width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, #ffde00, #ffaa00); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #4a3500; box-shadow: 0 4px 16px rgba(255,180,0,0.5); font-weight: 800; }
+.b-nav { height: 52px; background: #fff; border-top: 1.5px solid #ffe8a0; display: flex; align-items: center; justify-content: space-around; padding: 0 4px; }
+.b-ind { width: 30px; height: 24px; background: #ffeea0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+/* ─────────────────────────────────────────
+   시안 3: 라임 레몬 Lime Lemon
+   bg #f8fff0  light #e8ff80  accent #c8e600  dark #4a6000
+   → 라임+레몬 섞은 가장 상큼한 노란-연두
+───────────────────────────────────────── */
+.c { background: #f8fff0; }
+.c-bar {
+  height: 44px; background: #fff;
+  display: flex; align-items: center; padding: 0 14px;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #d8f080;
+}
+.c-bar-t { font-size: 14px; font-weight: 800; color: #3a5200; }
+.c-icon { width: 30px; height: 30px; border-radius: 9px; background: #e8ff80; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.c-body { flex: 1; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.c-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 7px; border: 1.5px solid #d8f080; }
+.c-chips { display: flex; gap: 5px; }
+.chip-on-c { font-size: 9px; font-weight: 800; padding: 4px 12px; border-radius: 20px; background: #4a6000; color: #fff; }
+.chip-off-c { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #e8ff80; color: #4a6000; }
+.c-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1.5px solid #e8f8c0; }
+.c-card.low { border-color: rgba(180,200,0,0.5); }
+.c-thumb { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #e8ff80; }
+.c-thumb.w { background: #d8f888; }
+.c-name { font-size: 12px; font-weight: 800; color: #3a5200; }
+.c-sub { font-size: 10px; color: #7aaa00; margin-top: 1px; }
+.c-badge { font-size: 8px; font-weight: 700; background: #d8f888; color: #5a7000; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.c-cnt { font-size: 18px; font-weight: 800; color: #4a6000; }
+.c-cnt.low { color: #8a8000; }
+.c-cnts { font-size: 9px; color: #aaa; }
+.c-fab { position: absolute; bottom: 58px; right: 12px; width: 42px; height: 42px; border-radius: 14px; background: #c8e600; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #3a5200; box-shadow: 0 4px 16px rgba(180,220,0,0.5); font-weight: 800; }
+.c-nav { height: 52px; background: #fff; border-top: 1.5px solid #d8f080; display: flex; align-items: center; justify-content: space-around; padding: 0 4px; }
+.c-ind { width: 30px; height: 24px; background: #e8ff80; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+
+<h1>🍋 상큼한 노란색 시안 3종</h1>
+<p class="sub">밝고 생기있는 노란 계열 · 재고 관리 화면 기준</p>
+
+<div class="row">
+
+  <!-- ── A: 레몬 소다 ── -->
+  <div class="col">
+    <div class="col-title">A — 레몬 소다</div>
+    <div class="phone a">
+      <div class="a-bar">
+        <span class="a-bar-t">재고 관리</span>
+        <div class="a-icon">🔔</div>
+      </div>
+      <div class="a-body">
+        <div class="a-search">
+          <span style="font-size:12px">🔍</span>
+          <span style="font-size:11px;color:#ccc">재료 검색...</span>
+        </div>
+        <div class="a-chips">
+          <div class="chip-on-a">전체</div>
+          <div class="chip-off-a">채소</div>
+          <div class="chip-off-a">과일</div>
+          <div class="chip-off-a">단백질</div>
+        </div>
+        <div class="a-card">
+          <div class="a-thumb">🥕</div>
+          <div style="flex:1"><div class="a-name">당근</div><div class="a-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="a-cnt">12</div><div class="a-cnts">큐브</div></div>
+        </div>
+        <div class="a-card low">
+          <div class="a-thumb w">🥦</div>
+          <div style="flex:1"><div class="a-name">브로콜리<span class="a-badge">부족</span></div><div class="a-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="a-cnt low">2</div><div class="a-cnts">큐브</div></div>
+        </div>
+        <div class="a-card">
+          <div class="a-thumb">🍎</div>
+          <div style="flex:1"><div class="a-name">사과</div><div class="a-sub">개수 단위</div></div>
+          <div style="text-align:right"><div class="a-cnt">8</div><div class="a-cnts">큐브</div></div>
+        </div>
+        <div class="a-card">
+          <div class="a-thumb">🥩</div>
+          <div style="flex:1"><div class="a-name">소고기</div><div class="a-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="a-cnt">15</div><div class="a-cnts">큐브</div></div>
+        </div>
+      </div>
+      <div class="a-fab">＋</div>
+      <div class="a-nav">
+        <div class="nav-item">
+          <div class="a-ind">📦</div>
+          <span class="nl" style="color:#5a5000">재고</span>
+        </div>
+        <div class="nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+    <div class="palette">
+      <div class="swatch" style="background:#5a5000"></div>
+      <div class="swatch" style="background:#f5e000"></div>
+      <div class="swatch" style="background:#fffb9f"></div>
+      <div class="swatch" style="background:#feffed"></div>
+    </div>
+    <div class="col-desc">
+      순수 레몬 옐로우.<br>
+      흰 앱바 + 진한 노란 버튼.<br>
+      가장 쨍하고 청량한 느낌.
+    </div>
+  </div>
+
+  <!-- ── B: 선샤인 팝 ── -->
+  <div class="col">
+    <div class="col-title">B — 선샤인 팝</div>
+    <div class="phone b">
+      <div class="b-bar">
+        <span class="b-bar-t">재고 관리</span>
+        <div class="b-icon">🔔</div>
+      </div>
+      <div class="b-body">
+        <div class="b-search">
+          <span style="font-size:12px">🔍</span>
+          <span style="font-size:11px;color:#ccc">재료 검색...</span>
+        </div>
+        <div class="b-chips">
+          <div class="chip-on-b">전체</div>
+          <div class="chip-off-b">채소</div>
+          <div class="chip-off-b">과일</div>
+          <div class="chip-off-b">단백질</div>
+        </div>
+        <div class="b-card">
+          <div class="b-thumb">🥕</div>
+          <div style="flex:1"><div class="b-name">당근</div><div class="b-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="b-cnt">12</div><div class="b-cnts">큐브</div></div>
+        </div>
+        <div class="b-card low">
+          <div class="b-thumb w">🥦</div>
+          <div style="flex:1"><div class="b-name">브로콜리<span class="b-badge">부족</span></div><div class="b-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="b-cnt low">2</div><div class="b-cnts">큐브</div></div>
+        </div>
+        <div class="b-card">
+          <div class="b-thumb">🍎</div>
+          <div style="flex:1"><div class="b-name">사과</div><div class="b-sub">개수 단위</div></div>
+          <div style="text-align:right"><div class="b-cnt">8</div><div class="b-cnts">큐브</div></div>
+        </div>
+        <div class="b-card">
+          <div class="b-thumb">🥩</div>
+          <div style="flex:1"><div class="b-name">소고기</div><div class="b-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="b-cnt">15</div><div class="b-cnts">큐브</div></div>
+        </div>
+      </div>
+      <div class="b-fab">＋</div>
+      <div class="b-nav">
+        <div class="nav-item">
+          <div class="b-ind">📦</div>
+          <span class="nl" style="color:#665200">재고</span>
+        </div>
+        <div class="nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+    <div class="palette">
+      <div class="swatch" style="background:#665200"></div>
+      <div class="swatch" style="background:#ffcc00"></div>
+      <div class="swatch" style="background:#ffeea0"></div>
+      <div class="swatch" style="background:#fffdf5"></div>
+    </div>
+    <div class="col-desc">
+      옐로→오렌지 그라디언트 앱바.<br>
+      활기차고 에너제틱한 느낌.<br>
+      가장 눈에 띄는 강렬한 선택.
+    </div>
+  </div>
+
+  <!-- ── C: 라임 레몬 ── -->
+  <div class="col">
+    <div class="col-title">C — 라임 레몬</div>
+    <div class="phone c">
+      <div class="c-bar">
+        <span class="c-bar-t">재고 관리</span>
+        <div class="c-icon">🔔</div>
+      </div>
+      <div class="c-body">
+        <div class="c-search">
+          <span style="font-size:12px">🔍</span>
+          <span style="font-size:11px;color:#ccc">재료 검색...</span>
+        </div>
+        <div class="c-chips">
+          <div class="chip-on-c">전체</div>
+          <div class="chip-off-c">채소</div>
+          <div class="chip-off-c">과일</div>
+          <div class="chip-off-c">단백질</div>
+        </div>
+        <div class="c-card">
+          <div class="c-thumb">🥕</div>
+          <div style="flex:1"><div class="c-name">당근</div><div class="c-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="c-cnt">12</div><div class="c-cnts">큐브</div></div>
+        </div>
+        <div class="c-card low">
+          <div class="c-thumb w">🥦</div>
+          <div style="flex:1"><div class="c-name">브로콜리<span class="c-badge">부족</span></div><div class="c-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="c-cnt low">2</div><div class="c-cnts">큐브</div></div>
+        </div>
+        <div class="c-card">
+          <div class="c-thumb">🍎</div>
+          <div style="flex:1"><div class="c-name">사과</div><div class="c-sub">개수 단위</div></div>
+          <div style="text-align:right"><div class="c-cnt">8</div><div class="c-cnts">큐브</div></div>
+        </div>
+        <div class="c-card">
+          <div class="c-thumb">🥩</div>
+          <div style="flex:1"><div class="c-name">소고기</div><div class="c-sub">무게 단위</div></div>
+          <div style="text-align:right"><div class="c-cnt">15</div><div class="c-cnts">큐브</div></div>
+        </div>
+      </div>
+      <div class="c-fab">＋</div>
+      <div class="c-nav">
+        <div class="nav-item">
+          <div class="c-ind">📦</div>
+          <span class="nl" style="color:#4a6000">재고</span>
+        </div>
+        <div class="nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+    <div class="palette">
+      <div class="swatch" style="background:#4a6000"></div>
+      <div class="swatch" style="background:#c8e600"></div>
+      <div class="swatch" style="background:#e8ff80"></div>
+      <div class="swatch" style="background:#f8fff0"></div>
+    </div>
+    <div class="col-desc">
+      라임+레몬 믹스 연두-노랑.<br>
+      흰 앱바 + 형광빛 포인트.<br>
+      가장 상큼하고 청량한 조합.
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:44px;color:#444;font-size:12px;line-height:2.2">
+  A: 순수 레몬 옐로 (흰 앱바)  ·  B: 선샤인 팝 (그라디언트 앱바)  ·  C: 라임레몬 (연두+노랑)
+</div>
+
+</body>
+</html>

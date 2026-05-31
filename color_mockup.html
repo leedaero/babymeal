@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>컬러 시안 3종</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Noto Sans KR', sans-serif;
+  background: #1c1c1e;
+  padding: 36px 20px 60px;
+}
+h1 { color: #fff; text-align: center; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
+.sub { color: #888; text-align: center; margin-bottom: 40px; font-size: 13px; }
+
+.row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+
+.col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.col-title { color: #fff; font-size: 15px; font-weight: 800; }
+.col-desc { color: #999; font-size: 11px; text-align: center; max-width: 190px; line-height: 1.6; }
+
+/* ── Phone Frame ── */
+.phone {
+  width: 210px; height: 440px;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 3px solid #333;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  position: relative;
+  display: flex; flex-direction: column;
+}
+
+/* ─────────────────────────────────────────
+   시안 1: 레몬 허니 (Lemon Honey)
+   primary #7a6200  accent #d4a017  light #fff8d6  bg #fffdf5
+───────────────────────────────────────── */
+.a-bg { background: #fffdf5; }
+.a-bar { background: #fff; height: 40px; display: flex; align-items: center; padding: 0 12px; justify-content: space-between; border-bottom: 1px solid #f3edcc; }
+.a-bar-title { font-size: 13px; font-weight: 800; color: #5a4800; }
+.a-icon-btn { width: 28px; height: 28px; border-radius: 8px; background: #fff8d6; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+
+.a-body { flex: 1; overflow: hidden; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.a-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.a-search span { font-size: 11px; color: #bba; }
+
+.a-chips { display: flex; gap: 5px; overflow: hidden; }
+.a-chip { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+.a-chip.on { background: #7a6200; color: #fff; }
+.a-chip.off { background: #fff8d6; color: #7a6200; }
+
+.a-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.a-card.low { border: 1.5px solid rgba(210,140,0,0.3); }
+.a-thumb { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.a-thumb.n { background: #fff8d6; }
+.a-thumb.w { background: #fff0cc; }
+.a-info { flex: 1; }
+.a-name { font-size: 12px; font-weight: 800; color: #5a4800; }
+.a-sub { font-size: 10px; color: #d4a017; }
+.a-badge { font-size: 8px; font-weight: 700; background: #fff0cc; color: #c07800; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.a-cnt { font-size: 18px; font-weight: 800; color: #7a6200; }
+.a-cntsub { font-size: 9px; color: #aaa; }
+
+.a-fab { position: absolute; bottom: 14px; right: 14px; width: 40px; height: 40px; border-radius: 13px; background: #7a6200; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; box-shadow: 0 4px 14px rgba(122,98,0,0.4); }
+
+.a-nav { height: 48px; background: #fff; border-top: 1px solid #f0e8c4; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; }
+.a-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.a-nav-item .ni { font-size: 16px; }
+.a-nav-item .nl { font-size: 8px; color: #aaa; font-weight: 600; }
+.a-nav-item.active .nl { color: #7a6200; }
+.a-nav-indicator { width: 28px; height: 22px; background: #fff8d6; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+/* ─────────────────────────────────────────
+   시안 2: 버터 아이보리 (Butter Ivory)
+   primary #6b5000  accent #c49a1a  light #fdf3c8  bg #fefcf0
+───────────────────────────────────────── */
+.b-bg { background: #fefcf0; }
+.b-bar { background: linear-gradient(135deg, #c49a1a, #8a6800); height: 40px; display: flex; align-items: center; padding: 0 12px; justify-content: space-between; }
+.b-bar-title { font-size: 13px; font-weight: 800; color: #fff; }
+.b-icon-btn { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+
+.b-body { flex: 1; overflow: hidden; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.b-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.b-search span { font-size: 11px; color: #ccc; }
+
+.b-chips { display: flex; gap: 5px; overflow: hidden; }
+.b-chip { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+.b-chip.on { background: #8a6800; color: #fff; }
+.b-chip.off { background: #fdf3c8; color: #8a6800; }
+
+.b-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(180,140,0,0.08); }
+.b-card.low { border: 1.5px solid rgba(196,154,26,0.35); }
+.b-thumb { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.b-thumb.n { background: #fdf3c8; }
+.b-thumb.w { background: #ffeebb; }
+.b-name { font-size: 12px; font-weight: 800; color: #5a4200; }
+.b-sub { font-size: 10px; color: #c49a1a; }
+.b-badge { font-size: 8px; font-weight: 700; background: #ffeebb; color: #a07000; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.b-cnt { font-size: 18px; font-weight: 800; color: #8a6800; }
+.b-cntsub { font-size: 9px; color: #aaa; }
+
+.b-fab { position: absolute; bottom: 14px; right: 14px; width: 40px; height: 40px; border-radius: 13px; background: linear-gradient(135deg, #c49a1a, #8a6800); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; box-shadow: 0 4px 14px rgba(180,140,0,0.45); }
+
+.b-nav { height: 48px; background: #fff; border-top: 1px solid #efe8c0; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; }
+.b-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.b-nav-item .ni { font-size: 16px; }
+.b-nav-item .nl { font-size: 8px; color: #aaa; font-weight: 600; }
+.b-nav-item.active .nl { color: #8a6800; }
+.b-nav-indicator { width: 28px; height: 22px; background: #fdf3c8; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+/* ─────────────────────────────────────────
+   시안 3: 샴페인 골드 (Champagne)
+   primary #5c4a10  accent #b89a30  light #f9f0d0  bg #fdfaf0
+   → 가장 차분하고 고급스러운 톤
+───────────────────────────────────────── */
+.c-bg { background: #fdfaf0; }
+.c-bar { background: #fff; height: 40px; display: flex; align-items: center; padding: 0 12px; justify-content: space-between; border-bottom: 1px solid #ede5c4; }
+.c-bar-title { font-size: 13px; font-weight: 800; color: #4a3a10; }
+.c-icon-btn { width: 28px; height: 28px; border-radius: 8px; background: #f9f0d0; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+
+.c-body { flex: 1; overflow: hidden; padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.c-search { background: #fff; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; border: 1.5px solid #f0e4b0; }
+.c-search span { font-size: 11px; color: #ccc; }
+
+.c-chips { display: flex; gap: 5px; overflow: hidden; }
+.c-chip { font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+.c-chip.on { background: #5c4a10; color: #fff; }
+.c-chip.off { background: #f9f0d0; color: #5c4a10; }
+
+.c-card { background: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1.5px solid #f4ebc8; }
+.c-card.low { border: 1.5px solid rgba(184,154,48,0.45); }
+.c-thumb { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.c-thumb.n { background: #f9f0d0; }
+.c-thumb.w { background: #fde8a0; }
+.c-name { font-size: 12px; font-weight: 800; color: #4a3a10; }
+.c-sub { font-size: 10px; color: #b89a30; }
+.c-badge { font-size: 8px; font-weight: 700; background: #fde8a0; color: #8a6800; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.c-cnt { font-size: 18px; font-weight: 800; color: #5c4a10; }
+.c-cntsub { font-size: 9px; color: #aaa; }
+
+.c-fab { position: absolute; bottom: 14px; right: 14px; width: 40px; height: 40px; border-radius: 13px; background: #5c4a10; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; box-shadow: 0 4px 14px rgba(92,74,16,0.38); }
+
+.c-nav { height: 48px; background: #fff; border-top: 1px solid #ede5c4; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; }
+.c-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.c-nav-item .ni { font-size: 16px; }
+.c-nav-item .nl { font-size: 8px; color: #aaa; font-weight: 600; }
+.c-nav-item.active .nl { color: #5c4a10; }
+.c-nav-indicator { width: 28px; height: 22px; background: #f9f0d0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+/* palette strip */
+.palette { display: flex; gap: 5px; margin-top: 4px; }
+.swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #333; }
+
+</style>
+</head>
+<body>
+
+<h1>🎨 컬러 테마 시안 3종</h1>
+<p class="sub">녹색 → 노란 계열 은은하게 전환 · 전체 화면 적용 미리보기</p>
+
+<div class="row">
+
+  <!-- ── 시안 A: 레몬 허니 ── -->
+  <div class="col">
+    <div class="col-title">시안 A — 레몬 허니</div>
+    <div class="phone a-bg">
+      <!-- Appbar -->
+      <div class="a-bar">
+        <span class="a-bar-title">재고 관리</span>
+        <div class="a-icon-btn">🔔</div>
+      </div>
+
+      <!-- Body -->
+      <div class="a-body">
+        <div class="a-search">
+          <span>🔍</span>
+          <span style="font-size:11px;color:#ccc;">재료 검색...</span>
+        </div>
+        <div class="a-chips">
+          <div class="a-chip on">전체</div>
+          <div class="a-chip off">채소</div>
+          <div class="a-chip off">과일</div>
+          <div class="a-chip off">단백질</div>
+        </div>
+
+        <div class="a-card">
+          <div class="a-thumb n">🥕</div>
+          <div class="a-info">
+            <div class="a-name">당근</div>
+            <div class="a-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="a-cnt">12</div>
+            <div class="a-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="a-card low">
+          <div class="a-thumb w">🥦</div>
+          <div class="a-info">
+            <div class="a-name">브로콜리<span class="a-badge">부족</span></div>
+            <div class="a-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="a-cnt" style="color:#c07800">2</div>
+            <div class="a-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="a-card">
+          <div class="a-thumb n">🍎</div>
+          <div class="a-info">
+            <div class="a-name">사과</div>
+            <div class="a-sub">개수 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="a-cnt">8</div>
+            <div class="a-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="a-card">
+          <div class="a-thumb n">🥩</div>
+          <div class="a-info">
+            <div class="a-name">소고기</div>
+            <div class="a-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="a-cnt">15</div>
+            <div class="a-cntsub">큐브</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAB -->
+      <div class="a-fab">＋</div>
+
+      <!-- Navbar -->
+      <div class="a-nav">
+        <div class="a-nav-item active">
+          <div class="a-nav-indicator">📦</div>
+          <span class="nl" style="color:#7a6200">재고</span>
+        </div>
+        <div class="a-nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="a-nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="a-nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="a-nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="swatch" style="background:#7a6200"></div>
+      <div class="swatch" style="background:#d4a017"></div>
+      <div class="swatch" style="background:#fff8d6"></div>
+      <div class="swatch" style="background:#fffdf5"></div>
+    </div>
+    <div class="col-desc">
+      밝고 따뜻한 레몬-꿀 톤.<br>
+      흰 앱바 + 노란 액센트.<br>
+      가볍고 산뜻한 느낌.
+    </div>
+  </div>
+
+  <!-- ── 시안 B: 허니 골드 ── -->
+  <div class="col">
+    <div class="col-title">시안 B — 허니 골드</div>
+    <div class="phone b-bg">
+      <div class="b-bar">
+        <span class="b-bar-title">재고 관리</span>
+        <div class="b-icon-btn">🔔</div>
+      </div>
+
+      <div class="b-body">
+        <div class="b-search">
+          <span>🔍</span>
+          <span style="font-size:11px;color:#ccc;">재료 검색...</span>
+        </div>
+        <div class="b-chips">
+          <div class="b-chip on">전체</div>
+          <div class="b-chip off">채소</div>
+          <div class="b-chip off">과일</div>
+          <div class="b-chip off">단백질</div>
+        </div>
+
+        <div class="b-card">
+          <div class="b-thumb n">🥕</div>
+          <div style="flex:1">
+            <div class="b-name">당근</div>
+            <div class="b-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="b-cnt">12</div>
+            <div class="b-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="b-card low">
+          <div class="b-thumb w">🥦</div>
+          <div style="flex:1">
+            <div class="b-name">브로콜리<span class="b-badge">부족</span></div>
+            <div class="b-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="b-cnt" style="color:#a07000">2</div>
+            <div class="b-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="b-card">
+          <div class="b-thumb n">🍎</div>
+          <div style="flex:1">
+            <div class="b-name">사과</div>
+            <div class="b-sub">개수 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="b-cnt">8</div>
+            <div class="b-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="b-card">
+          <div class="b-thumb n">🥩</div>
+          <div style="flex:1">
+            <div class="b-name">소고기</div>
+            <div class="b-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="b-cnt">15</div>
+            <div class="b-cntsub">큐브</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="b-fab">＋</div>
+
+      <div class="b-nav">
+        <div class="b-nav-item active">
+          <div class="b-nav-indicator">📦</div>
+          <span class="nl" style="color:#8a6800">재고</span>
+        </div>
+        <div class="b-nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="b-nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="b-nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="b-nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="swatch" style="background:#8a6800"></div>
+      <div class="swatch" style="background:#c49a1a"></div>
+      <div class="swatch" style="background:#fdf3c8"></div>
+      <div class="swatch" style="background:#fefcf0"></div>
+    </div>
+    <div class="col-desc">
+      그라디언트 앱바로 포인트.<br>
+      꿀빛 골드 톤이 진하게.<br>
+      따뜻하고 풍성한 느낌.
+    </div>
+  </div>
+
+  <!-- ── 시안 C: 샴페인 ── -->
+  <div class="col">
+    <div class="col-title">시안 C — 샴페인 골드</div>
+    <div class="phone c-bg">
+      <div class="c-bar">
+        <span class="c-bar-title">재고 관리</span>
+        <div class="c-icon-btn">🔔</div>
+      </div>
+
+      <div class="c-body">
+        <div class="c-search">
+          <span>🔍</span>
+          <span style="font-size:11px;color:#ccc;">재료 검색...</span>
+        </div>
+        <div class="c-chips">
+          <div class="c-chip on">전체</div>
+          <div class="c-chip off">채소</div>
+          <div class="c-chip off">과일</div>
+          <div class="c-chip off">단백질</div>
+        </div>
+
+        <div class="c-card">
+          <div class="c-thumb n">🥕</div>
+          <div style="flex:1">
+            <div class="c-name">당근</div>
+            <div class="c-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="c-cnt">12</div>
+            <div class="c-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="c-card low">
+          <div class="c-thumb w">🥦</div>
+          <div style="flex:1">
+            <div class="c-name">브로콜리<span class="c-badge">부족</span></div>
+            <div class="c-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="c-cnt" style="color:#8a6800">2</div>
+            <div class="c-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="c-card">
+          <div class="c-thumb n">🍎</div>
+          <div style="flex:1">
+            <div class="c-name">사과</div>
+            <div class="c-sub">개수 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="c-cnt">8</div>
+            <div class="c-cntsub">큐브</div>
+          </div>
+        </div>
+
+        <div class="c-card">
+          <div class="c-thumb n">🥩</div>
+          <div style="flex:1">
+            <div class="c-name">소고기</div>
+            <div class="c-sub">무게 단위</div>
+          </div>
+          <div style="text-align:right">
+            <div class="c-cnt">15</div>
+            <div class="c-cntsub">큐브</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="c-fab">＋</div>
+
+      <div class="c-nav">
+        <div class="c-nav-item active">
+          <div class="c-nav-indicator">📦</div>
+          <span class="nl" style="color:#5c4a10">재고</span>
+        </div>
+        <div class="c-nav-item"><span class="ni">📅</span><span class="nl">식단</span></div>
+        <div class="c-nav-item"><span class="ni">⚠️</span><span class="nl">알러지</span></div>
+        <div class="c-nav-item"><span class="ni">📊</span><span class="nl">통계</span></div>
+        <div class="c-nav-item"><span class="ni">⚙️</span><span class="nl">설정</span></div>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="swatch" style="background:#5c4a10"></div>
+      <div class="swatch" style="background:#b89a30"></div>
+      <div class="swatch" style="background:#f9f0d0"></div>
+      <div class="swatch" style="background:#fdfaf0"></div>
+    </div>
+    <div class="col-desc">
+      가장 차분하고 고급스러운 톤.<br>
+      흰 앱바 + 선 테두리 카드.<br>
+      미니멀하고 정돈된 느낌.
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:44px;color:#555;font-size:12px;line-height:2">
+  A: 밝은 레몬꿀 (흰 앱바)  ·  B: 허니골드 (그라디언트 앱바)  ·  C: 샴페인 (차분·고급)
+</div>
+
+</body>
+</html>
