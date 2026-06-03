@@ -24,7 +24,7 @@ cd /Users/idaelo/project/babyMeal/flutter/babymeal_app
 # 릴리즈 빌드 (실기기용)
 flutter build apk --release
 # 에뮬레이터 빌드 (x86_64)
-flutter build apk --debug --target-platform android-x64
+flutter build apk --debug --target-platform android-arm64
 ```
 
 ### 3. Firebase App Distribution 업로드
@@ -59,7 +59,7 @@ firebase appdistribution:distribute \
 ```bash
 cd /Users/idaelo/project/babyMeal/flutter/babymeal_app && \
 flutter build apk --release && \
-flutter build apk --debug --target-platform android-x64 && \
+flutter build apk --debug --target-platform android-arm64 && \
 firebase appdistribution:distribute \
   build/app/outputs/flutter-apk/app-release.apk \
   --project babymeal-4f6f7 \
