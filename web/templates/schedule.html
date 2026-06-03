@@ -147,6 +147,12 @@
             </div>
           </template>
         </div>
+        <template x-if="totalGrams > 0">
+          <div style="text-align:right;font-size:.82rem;color:var(--accent-blue);
+                      font-weight:600;padding:.25rem 0;border-top:1px solid var(--border);margin-top:.25rem;">
+            합계 <span x-text="totalGrams + 'g'"></span>
+          </div>
+        </template>
         <div class="form-actions">
           <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">저장하기</button>
@@ -217,6 +223,12 @@
             </div>
           </template>
         </div>
+        <template x-if="totalGrams > 0">
+          <div style="text-align:right;font-size:.82rem;color:var(--accent-blue);
+                      font-weight:600;padding:.25rem 0;border-top:1px solid var(--border);margin-top:.25rem;">
+            합계 <span x-text="totalGrams + 'g'"></span>
+          </div>
+        </template>
         <div class="form-actions">
           <button class="btn btn-muted" @click="$dispatch('close-modal')">취소</button>
           <button class="btn btn-blue"  @click="submit()" :disabled="!hasIngredients">추가하기</button>

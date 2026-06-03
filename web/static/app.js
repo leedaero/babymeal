@@ -675,6 +675,12 @@ function mealModal(defaultDate, defaultMealTime, ingredients) {
 
         get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
 
+        get totalGrams() {
+            return Object.entries(this.cubes)
+                .filter(([, c]) => c > 0)
+                .reduce((sum, [id, c]) => sum + this._cubesToGrams(parseInt(id), c), 0);
+        },
+
         _cubesToGrams(ingId, cubeCount) {
             const ing = this.ingredients.find(i => i.id === ingId);
             if (!ing) return cubeCount;
@@ -738,6 +744,12 @@ function editMealModal(meal, ingredients) {
         closeNp() { this.npIng = null; },
 
         get hasIngredients() { return Object.values(this.cubes).some(c => c > 0); },
+
+        get totalGrams() {
+            return Object.entries(this.cubes)
+                .filter(([, c]) => c > 0)
+                .reduce((sum, [id, c]) => sum + this._cubesToGrams(parseInt(id), c), 0);
+        },
 
         _cubesToGrams(ingId, cubeCount) {
             const ing = this.ingredients.find(i => i.id === ingId);
