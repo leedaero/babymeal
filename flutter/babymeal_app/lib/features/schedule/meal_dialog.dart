@@ -271,7 +271,9 @@ class _MealDialogState extends ConsumerState<MealDialog> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text('${ing.emoji} ${ing.name}',
+                                      Text(
+                                        '${ing.emoji} ${ing.name}'
+                                        '${ing.weightPerCube != null ? ' ${ing.weightPerCube}g' : ''}',
                                           style: const TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w700,
@@ -407,7 +409,8 @@ class _MealDialogState extends ConsumerState<MealDialog> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${ing.emoji} ${ing.name}',
+                          '${ing.emoji} ${ing.name}'
+                          '${ing.weightPerCube != null ? ' ${ing.weightPerCube}g' : ''}',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight:
