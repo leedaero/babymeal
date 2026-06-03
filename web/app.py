@@ -396,10 +396,25 @@ def create_app(config=None):
 
     # ─── 알러지 테스트 API ────────────────────────────────────
 
+    def _ensure_allergy_status_col(conn):
+        if getattr(_ensure_allergy_status_col, '_done', False):
+            return
+        try:
+            cur = conn.cursor()
+            cur.execute("SHOW COLUMNS FROM allergy_tests LIKE 'status'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE allergy_tests ADD COLUMN status VARCHAR(20) DEFAULT NULL")
+                conn.commit()
+            _ensure_allergy_status_col._done = True
+        except Exception as e:
+            logging.warning('_ensure_allergy_status_col: %s', e)
+
     @app.get('/api/allergy')
     @login_required
     def api_allergy_list():
-        cur = _mod.get_db().cursor()
+        conn = _mod.get_db()
+        _ensure_allergy_status_col(conn)
+        cur = conn.cursor()
         cur.execute(
             'SELECT * FROM allergy_tests WHERE user_id=%s ORDER BY test_date, id',
             (get_view_user_id(),)
@@ -420,8 +435,8 @@ def create_app(config=None):
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute(
-            'INSERT INTO allergy_tests (user_id, test_date, emoji, ingredient_name, memo) VALUES (%s, %s, %s, %s, %s)',
-            (get_view_user_id(), d['test_date'], d.get('emoji', '🧪'), name, d.get('memo', ''))
+            'INSERT INTO allergy_tests (user_id, test_date, emoji, ingredient_name, memo, status) VALUES (%s, %s, %s, %s, %s, %s)',
+            (get_view_user_id(), d['test_date'], d.get('emoji', '🧪'), name, d.get('memo', ''), d.get('status') or None)
         )
         conn.commit()
         cur.execute('SELECT * FROM allergy_tests WHERE id=%s', (cur.lastrowid,))
@@ -440,8 +455,8 @@ def create_app(config=None):
         conn = _mod.get_db()
         cur  = conn.cursor()
         cur.execute(
-            'UPDATE allergy_tests SET emoji=%s, ingredient_name=%s, memo=%s WHERE id=%s AND user_id=%s',
-            (d.get('emoji', '🧪'), name, d.get('memo', ''), test_id, get_view_user_id())
+            'UPDATE allergy_tests SET emoji=%s, ingredient_name=%s, memo=%s, status=%s WHERE id=%s AND user_id=%s',
+            (d.get('emoji', '🧪'), name, d.get('memo', ''), d.get('status') or None, test_id, get_view_user_id())
         )
         conn.commit()
         cur.execute('SELECT * FROM allergy_tests WHERE id=%s', (test_id,))
@@ -678,10 +693,25 @@ def create_app(config=None):
             (ingredient_id, user_id, event_type, delta, note)
         )
 
+    def _ensure_ingredients_category_col(conn):
+        if getattr(_ensure_ingredients_category_col, '_done', False):
+            return
+        try:
+            cur = conn.cursor()
+            cur.execute("SHOW COLUMNS FROM ingredients LIKE 'category'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE ingredients ADD COLUMN category VARCHAR(50) DEFAULT NULL")
+                conn.commit()
+            _ensure_ingredients_category_col._done = True
+        except Exception as e:
+            logging.warning('_ensure_ingredients_category_col: %s', e)
+
     @app.get('/api/ingredients')
     @login_required
     def api_ingredients_list():
-        cur = _mod.get_db().cursor()
+        conn = _mod.get_db()
+        _ensure_ingredients_category_col(conn)
+        cur = conn.cursor()
         cur.execute('SELECT * FROM ingredients WHERE user_id=%s AND deleted=0 ORDER BY name',
                     (get_view_user_id(),))
         return jsonify([_fmt_ingredient(r) for r in cur.fetchall()])
@@ -711,13 +741,15 @@ def create_app(config=None):
         except (ValueError, TypeError):
             return jsonify({'error': '중량/개수는 양의 정수여야 합니다'}), 400
         d['unit_type'] = unit_type
+        d['category']  = d.get('category') or None
         conn = _mod.get_db()
+        _ensure_ingredients_category_col(conn)
         cur  = conn.cursor()
         cur.execute("""
             INSERT INTO ingredients
-              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, unit_type, user_id)
+              (name, emoji, color, created_at, weight_per_cube, total_cubes, current_cubes, unit_type, user_id, category)
             VALUES (%(name)s, %(emoji)s, %(color)s, %(created_at)s,
-                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(unit_type)s, %(user_id)s)
+                    %(weight_per_cube)s, %(total_cubes)s, %(total_cubes)s, %(unit_type)s, %(user_id)s, %(category)s)
         """, {**d, 'user_id': get_view_user_id()})
         _log_ingredient_event(conn, cur.lastrowid, get_view_user_id(), 'created', d['total_cubes'])
         conn.commit()
@@ -742,7 +774,7 @@ def create_app(config=None):
         d    = request.get_json()
         conn = _mod.get_db()
         cur  = conn.cursor()
-        UPDATABLE_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes', 'unit_type'}
+        UPDATABLE_FIELDS = {'name', 'emoji', 'color', 'created_at', 'weight_per_cube', 'total_cubes', 'unit_type', 'category'}
         d = {k: v for k, v in d.items() if k in UPDATABLE_FIELDS}
         if not d:
             return jsonify({'error': 'no valid fields'}), 400
