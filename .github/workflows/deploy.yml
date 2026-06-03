@@ -64,7 +64,16 @@ jobs:
       - name: Restart service
         run: |
           nsenter --target 1 --mount --uts --ipc --net --pid -- \
-            systemctl restart babymeal
+            bash -c "
+              fuser -k 8990/tcp 2>/dev/null || true
+              pkill -f 'python.*app.py' 2>/dev/null || true
+              sleep 2
+              systemctl restart babymeal 2>/dev/null || true
+              sleep 3
+              systemctl is-active babymeal && echo 'SERVICE OK' || echo 'SERVICE NOT ACTIVE - starting manually'
+              pgrep -f 'python.*app.py' > /dev/null && echo 'PROCESS RUNNING' || \
+                nohup /bin/python3 /volume1/DR_DATA1/babyMeal/web/app.py --port 8990 >> /volume1/DR_DATA1/babyMeal/logs/app.log 2>&1 &
+            "
 
       - name: Discord notify
         if: always()
