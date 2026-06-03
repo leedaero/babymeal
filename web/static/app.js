@@ -430,6 +430,7 @@ function schedulePage() {
         addDefaultMealTime: 'morning',
         _today: new Date(),
         checkedIngredients: {},
+        consumedGramsInput: '',
 
         async init() {
             const t = new Date();
@@ -522,6 +523,7 @@ function schedulePage() {
 
         openDetail(meal)  {
             this.selectedMeal = { ...meal, ingredients: meal.ingredients || [] };
+            this.consumedGramsInput = meal.consumed_grams != null ? String(meal.consumed_grams) : '';
             this.checkedIngredients = {};
             for (const mi of meal.ingredients || []) {
                 // confirmed/auto-consumed: 저장된 consumed 상태 복원, 나머지: 전체 체크
@@ -529,7 +531,21 @@ function schedulePage() {
                 this.checkedIngredients[mi.ingredient_id] = isConsumedState ? !!mi.consumed : true;
             }
         },
-        closeDetail()     { this.selectedMeal = null; this.checkedIngredients = {}; },
+        closeDetail()     { this.selectedMeal = null; this.checkedIngredients = {}; this.consumedGramsInput = ''; },
+
+        async saveConsumedGrams(meal) {
+            const raw = this.consumedGramsInput.trim();
+            const val = raw === '' ? null : parseInt(raw);
+            if (raw !== '' && (isNaN(val) || val < 0)) return;
+            const updated = await api(`/api/meals/${meal.id}`, {
+                method: 'PATCH', body: { consumed_grams: val },
+            });
+            if (updated && !updated.error) {
+                const idx = this.meals.findIndex(m => m.id === meal.id);
+                if (idx !== -1) this.meals[idx] = updated;
+                this.selectedMeal = { ...updated, ingredients: updated.ingredients || [] };
+            }
+        },,
 
         toggleCheck(id)   { this.checkedIngredients[id] = !this.checkedIngredients[id]; },
         isChecked(id)     { return !!this.checkedIngredients[id]; },
@@ -632,6 +648,13 @@ function schedulePage() {
                 .flatMap(m => m.ingredients || [])
                 .filter(mi => mi.unit_type !== 'quantity')
                 .reduce((sum, mi) => sum + mi.grams, 0);
+        },
+
+        dayConsumedGrams(date) {
+            const ds = this._dateStr(date);
+            const dayMeals = this.meals.filter(m => m.date === ds);
+            if (!dayMeals.some(m => m.consumed_grams != null)) return null;
+            return dayMeals.reduce((sum, m) => sum + (m.consumed_grams ?? 0), 0);
         },
 
         mealTotalGrams(meal) {

@@ -36,7 +36,15 @@
             </div>
           </template>
           <template x-if="!cell.other && dayTotalGrams(cell.d) > 0">
-            <span class="cal-day-total" x-text="dayTotalGrams(cell.d) + 'g'"></span>
+            <span class="cal-day-total">
+              <template x-if="dayConsumedGrams(cell.d) != null">
+                <span :style="dayConsumedGrams(cell.d) < dayTotalGrams(cell.d) ? 'color:#e74c3c' : 'color:#27ae60'"
+                      x-text="dayConsumedGrams(cell.d) + 'g'"></span>
+              </template>
+              <template x-if="dayConsumedGrams(cell.d) == null">
+                <span x-text="dayTotalGrams(cell.d) + 'g'"></span>
+              </template>
+            </span>
           </template>
         </div>
       </template>
@@ -86,9 +94,26 @@
               <template x-if="anyChecked">
                 <span>체크 <strong x-text="checkedMealGrams + 'g'"></strong> / </span>
               </template>
-              전체 <strong x-text="mealTotalGrams(selectedMeal) + 'g'"></strong>
+              계획 <strong x-text="mealTotalGrams(selectedMeal) + 'g'"></strong>
             </div>
           </template>
+        </div>
+
+        <!-- 실제 섭취량 -->
+        <div class="form-group" style="margin-top:.25rem;">
+          <label class="form-label">실제 섭취량</label>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <input type="number" min="0" class="form-input" style="width:100px;"
+                   :value="selectedMeal.consumed_grams ?? ''"
+                   @input="consumedGramsInput = $event.target.value"
+                   placeholder="g">
+            <button class="btn btn-sm btn-blue"
+                    @click="saveConsumedGrams(selectedMeal)">저장</button>
+            <template x-if="selectedMeal.consumed_grams != null">
+              <span style="font-size:.8rem;color:var(--accent-blue);font-weight:600;"
+                    x-text="selectedMeal.consumed_grams + 'g 섭취'"></span>
+            </template>
+          </div>
         </div>
 
         <div class="form-actions" style="flex-wrap:wrap;gap:.4rem;">
