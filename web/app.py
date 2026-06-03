@@ -905,22 +905,8 @@ def create_app(config=None):
 
     # ─── 식단 API ─────────────────────────────────────────
 
-    def _ensure_meals_consumed_grams_col(conn):
-        if getattr(_ensure_meals_consumed_grams_col, '_done', False):
-            return
-        try:
-            cur = conn.cursor()
-            cur.execute("SHOW COLUMNS FROM meals LIKE 'consumed_grams'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE meals ADD COLUMN consumed_grams INT DEFAULT NULL")
-                conn.commit()
-            _ensure_meals_consumed_grams_col._done = True
-        except Exception as e:
-            logging.warning('_ensure_meals_consumed_grams_col: %s', e)
-
     def _meal_with_ingredients(conn, meal_id):
         _ensure_meal_ingredients_consumed_col(conn)
-        _ensure_meals_consumed_grams_col(conn)
         cur = conn.cursor()
         cur.execute('SELECT * FROM meals WHERE id=%s', (meal_id,))
         meal = dict(cur.fetchone())
@@ -1017,7 +1003,6 @@ def create_app(config=None):
     def api_meals_patch(meal_id):
         d = request.get_json() or {}
         conn = _mod.get_db()
-        _ensure_meals_consumed_grams_col(conn)
         cur  = conn.cursor()
         cur.execute('SELECT id FROM meals WHERE id=%s AND user_id=%s',
                     (meal_id, get_view_user_id()))
