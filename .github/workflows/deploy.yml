@@ -65,14 +65,13 @@ jobs:
         run: |
           nsenter --target 1 --mount --uts --ipc --net --pid -- \
             bash -c "
-              fuser -k 8990/tcp 2>/dev/null || true
-              pkill -f 'python.*app.py' 2>/dev/null || true
-              sleep 2
-              systemctl restart babymeal 2>/dev/null || true
+              PID=\$(ss -lptn 'sport = :8990' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
+              [ -n \"\$PID\" ] && echo \"Killing PID \$PID on port 8990\" && kill \"\$PID\" && sleep 2 || true
+              systemctl restart babymeal 2>/dev/null || \
+                nohup /bin/python3 /volume1/DR_DATA1/babyMeal/web/app.py --port 8990 \
+                  >> /volume1/DR_DATA1/babyMeal/logs/app.log 2>&1 &
               sleep 3
-              systemctl is-active babymeal && echo 'SERVICE OK' || echo 'SERVICE NOT ACTIVE - starting manually'
-              pgrep -f 'python.*app.py' > /dev/null && echo 'PROCESS RUNNING' || \
-                nohup /bin/python3 /volume1/DR_DATA1/babyMeal/web/app.py --port 8990 >> /volume1/DR_DATA1/babyMeal/logs/app.log 2>&1 &
+              echo Deploy done
             "
 
       - name: Discord notify
