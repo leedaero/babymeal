@@ -905,8 +905,22 @@ def create_app(config=None):
 
     # ─── 식단 API ─────────────────────────────────────────
 
+    def _ensure_meals_consumed_grams_col(conn):
+        if getattr(_ensure_meals_consumed_grams_col, '_done', False):
+            return
+        try:
+            cur = conn.cursor()
+            cur.execute("SHOW COLUMNS FROM meals LIKE 'consumed_grams'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE meals ADD COLUMN consumed_grams INT DEFAULT NULL")
+                conn.commit()
+            _ensure_meals_consumed_grams_col._done = True
+        except Exception as e:
+            logging.warning('_ensure_meals_consumed_grams_col: %s', e)
+
     def _meal_with_ingredients(conn, meal_id):
         _ensure_meal_ingredients_consumed_col(conn)
+        _ensure_meals_consumed_grams_col(conn)
         cur = conn.cursor()
         cur.execute('SELECT * FROM meals WHERE id=%s', (meal_id,))
         meal = dict(cur.fetchone())
@@ -996,6 +1010,29 @@ def create_app(config=None):
                     (meal_id, mi['ingredient_id'], mi['grams'])
                 )
         conn.commit()
+        return jsonify(_meal_with_ingredients(conn, meal_id))
+
+    @app.patch('/api/meals/<int:meal_id>')
+    @login_required
+    def api_meals_patch(meal_id):
+        d = request.get_json() or {}
+        conn = _mod.get_db()
+        _ensure_meals_consumed_grams_col(conn)
+        cur  = conn.cursor()
+        cur.execute('SELECT id FROM meals WHERE id=%s AND user_id=%s',
+                    (meal_id, get_view_user_id()))
+        if not cur.fetchone():
+            return jsonify({'error': 'not found'}), 404
+        if 'consumed_grams' in d:
+            val = d['consumed_grams']
+            if val is not None:
+                try:
+                    val = int(val)
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'consumed_grams는 정수여야 합니다'}), 400
+            cur.execute('UPDATE meals SET consumed_grams=%s WHERE id=%s AND user_id=%s',
+                        (val, meal_id, get_view_user_id()))
+            conn.commit()
         return jsonify(_meal_with_ingredients(conn, meal_id))
 
     @app.delete('/api/meals/<int:meal_id>')
