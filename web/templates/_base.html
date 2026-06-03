@@ -14,9 +14,9 @@
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
     }
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="{{ url_for('static', filename='app.js') }}?v=3"></script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=4"></script>
   <script>window._csrfToken = {{ csrf_token()|tojson }};</script>
   {% block extra_head %}{% endblock %}
 </head>
@@ -47,6 +47,9 @@
       </a>
       <a href="/allergy" class="tab-btn {% if active_tab == 'allergy' %}active{% endif %}">
         <span class="sidebar-icon">🧪</span><span class="sidebar-text">알러지 테스트</span>
+      </a>
+      <a href="/deleted" class="tab-btn {% if active_tab == 'deleted' %}active{% endif %}">
+        <span class="sidebar-icon">🗑</span><span class="sidebar-text">삭제된 큐브</span>
       </a>
       <a href="/app-settings" class="tab-btn {% if active_tab == 'app_settings' %}active{% endif %}">
         <span class="sidebar-icon">📲</span><span class="sidebar-text">앱설정</span>

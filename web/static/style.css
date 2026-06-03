@@ -276,6 +276,51 @@ body { background: var(--background); color: var(--text-primary); font-size: 14p
 .badge-muted   { background: var(--muted-bg);   color: var(--text-muted); }
 .badge-blue    { background: var(--accent-blue-bg); color: #1A5FA0; }
 
+/* ─── 삭제된 큐브 ─── */
+
+.deleted-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  display: flex; flex-direction: column; gap: .4rem;
+}
+
+.deleted-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.deleted-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(0,0,0,.08);
+  flex-shrink: 0;
+}
+
+.deleted-meta {
+  display: flex; flex-wrap: wrap; gap: .3rem .75rem;
+  font-size: .72rem; color: var(--text-muted);
+}
+
+.deleted-log-toggle {
+  font-size: .72rem; color: var(--accent-blue);
+  background: none; border: none; cursor: pointer;
+  padding: .2rem 0; text-align: left;
+}
+
+.deleted-log-wrap {
+  border-top: 1px solid var(--border);
+  margin-top: .25rem; padding-top: .35rem;
+}
+
+.deleted-log-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .3rem 0; border-bottom: 1px solid var(--border);
+  font-size: .8rem;
+}
+.deleted-log-row:last-child { border-bottom: none; }
+
 /* ─── 재고 경고 배너 ─── */
 
 .stock-warning {

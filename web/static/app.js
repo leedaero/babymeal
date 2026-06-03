@@ -1146,3 +1146,36 @@ function appSettingsPage() {
         },
     };
 }
+
+// ─── 삭제된 큐브 ───
+function deletedPage() {
+    return {
+        items: [],
+
+        async init() {
+            const raw = await api('/api/ingredients/deleted') || [];
+            this.items = raw.map(i => ({ ...i, _open: false, _logs: null }));
+        },
+
+        async restore(ing) {
+            if (!confirm(`"${ing.name}"을(를) 재고로 복원할까요?`)) return;
+            const res = await api(`/api/ingredients/${ing.id}/restore`, { method: 'POST' });
+            if (res && !res.error) {
+                this.items = this.items.filter(i => i.id !== ing.id);
+            }
+        },
+
+        async toggleLogs(ing) {
+            ing._open = !ing._open;
+            if (ing._open && ing._logs === null) {
+                ing._logs = await api(`/api/ingredients/${ing.id}/logs`) || [];
+            }
+        },
+
+        logLabel(log) {
+            const icons  = { created: '🆕', fed: '🍼', replenished: '🔁', edited: '✏️' };
+            const labels = { created: '제작', fed: '먹힘', replenished: '보충', edited: '수정' };
+            return `${icons[log.event_type] || '•'} ${labels[log.event_type] || log.event_type}`;
+        },
+    };
+}

@@ -470,6 +470,11 @@ def create_app(config=None):
     def app_settings_page():
         return render_template('app_settings.html', **_page_ctx())
 
+    @app.route('/deleted')
+    @login_required
+    def deleted_page():
+        return render_template('deleted.html', **_page_ctx())
+
     # ─── 자동 차감 ────────────────────────────────────────
 
     # ─── 유저 API (관리자 전용) ──────────────────────────────
@@ -770,15 +775,60 @@ def create_app(config=None):
                     ing['image_url'] = img_url
         return jsonify(_fmt_ingredient(ing))
 
+    def _ensure_ingredient_deleted_at(conn):
+        if getattr(_ensure_ingredient_deleted_at, '_done', False):
+            return
+        try:
+            cur = conn.cursor()
+            cur.execute("SHOW COLUMNS FROM ingredients LIKE 'deleted_at'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE ingredients ADD COLUMN deleted_at DATETIME DEFAULT NULL")
+                conn.commit()
+            _ensure_ingredient_deleted_at._done = True
+        except Exception as e:
+            logging.warning('_ensure_ingredient_deleted_at: %s', e)
+
     @app.delete('/api/ingredients/<int:ing_id>')
     @login_required
     def api_ingredients_delete(ing_id):
         conn = _mod.get_db()
+        _ensure_ingredient_deleted_at(conn)
         cur  = conn.cursor()
-        cur.execute('UPDATE ingredients SET deleted=1 WHERE id=%s AND user_id=%s',
+        cur.execute('UPDATE ingredients SET deleted=1, deleted_at=NOW() WHERE id=%s AND user_id=%s',
                     (ing_id, get_view_user_id()))
         conn.commit()
         return jsonify({'ok': True})
+
+    @app.post('/api/ingredients/<int:ing_id>/restore')
+    @login_required
+    def api_ingredients_restore(ing_id):
+        conn = _mod.get_db()
+        cur  = conn.cursor()
+        cur.execute('UPDATE ingredients SET deleted=0, deleted_at=NULL WHERE id=%s AND user_id=%s',
+                    (ing_id, get_view_user_id()))
+        conn.commit()
+        cur.execute('SELECT * FROM ingredients WHERE id=%s', (ing_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'error': '없음'}), 404
+        return jsonify(_fmt_ingredient(row))
+
+    @app.get('/api/ingredients/deleted')
+    @login_required
+    def api_ingredients_deleted_list():
+        conn = _mod.get_db()
+        _ensure_ingredient_deleted_at(conn)
+        _ensure_ingredient_logs_table(conn)
+        cur  = conn.cursor()
+        cur.execute(
+            'SELECT * FROM ingredients WHERE user_id=%s AND deleted=1 ORDER BY deleted_at DESC, id DESC',
+            (get_view_user_id(),)
+        )
+        rows = [_fmt_ingredient(r) for r in cur.fetchall()]
+        for r in rows:
+            if r.get('deleted_at'):
+                r['deleted_at'] = str(r['deleted_at'])[:10]
+        return jsonify(rows)
 
     @app.post('/api/ingredients/<int:ing_id>/adjust')
     @login_required
