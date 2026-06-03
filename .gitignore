@@ -6,7 +6,13 @@ __pycache__/
 *.log
 .pytest_cache/
 
+# Flutter (별도 레포: babymeal-flutter)
+flutter/
+
 # Firebase
-flutter/babymeal_app/android/app/google-services.json
 firebase-service-account.json
 firebase-adminsdk.json
+
+# 개발용 목업
+*.html
+!web/**/*.html
