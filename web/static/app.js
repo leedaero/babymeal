@@ -545,7 +545,7 @@ function schedulePage() {
                 if (idx !== -1) this.meals[idx] = updated;
                 this.selectedMeal = { ...updated, ingredients: updated.ingredients || [] };
             }
-        },,
+        },
 
         toggleCheck(id)   { this.checkedIngredients[id] = !this.checkedIngredients[id]; },
         isChecked(id)     { return !!this.checkedIngredients[id]; },
