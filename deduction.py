@@ -30,7 +30,11 @@ def compute_deductions(meals, ingredients):
             i = ing_map.get(mi['ingredient_id'])
             if not i:
                 continue
-            cubes = round(mi['grams'] / i['weight_per_cube'])
-            deltas[mi['ingredient_id']] = deltas.get(mi['ingredient_id'], 0) - cubes
+            grams = mi['grams'] or 0
+            wpc   = i['weight_per_cube'] or 1
+            # grams < wpc 이면 큐브 수를 그대로 보낸 것으로 간주
+            cubes = int(grams) if grams < wpc else round(grams / wpc)
+            if cubes:
+                deltas[mi['ingredient_id']] = deltas.get(mi['ingredient_id'], 0) - cubes
 
     return updates, deltas

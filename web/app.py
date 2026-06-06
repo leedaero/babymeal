@@ -1127,7 +1127,13 @@ def create_app(config=None):
             wpc = r['weight_per_cube'] if r.get('unit_type') != 'quantity' else 1
             if not wpc:
                 continue
-            cubes = round(r['grams'] / wpc)
+            grams = r['grams'] or 0
+            if grams == 0:
+                continue
+            # grams < wpc 이면 클라이언트가 큐브 수를 그대로 보낸 것으로 간주
+            cubes = int(grams) if grams < wpc else round(grams / wpc)
+            if cubes == 0:
+                continue
             delta = -cubes if direction == 'deduct' else cubes
             cur.execute(
                 'UPDATE ingredients SET current_cubes = GREATEST(0, current_cubes + %s) WHERE id=%s',
@@ -1153,7 +1159,10 @@ def create_app(config=None):
             wpc = r['weight_per_cube'] if r.get('unit_type') != 'quantity' else 1
             if not wpc:
                 continue
-            cubes = round(r['grams'] / wpc)
+            grams = r['grams'] or 0
+            cubes = int(grams) if grams < wpc else round(grams / wpc)
+            if not cubes:
+                continue
             time_label = _MEAL_TIME_KO.get(r['meal_time'], r['meal_time'])
             note = f"{r['meal_date']} {time_label}"
             _log_ingredient_event(conn, r['ingredient_id'], user_id, 'fed', -cubes, note)
